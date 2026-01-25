@@ -1,4 +1,3 @@
-- clearAllMocks(), resetAllMocks()
 - chain matchers
 - type inference: ChainMockInstance<T> should be like vi.Mock<T>, and this would
   inform the methods of the ChainMockInstance (defaut T to any)

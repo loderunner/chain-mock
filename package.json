@@ -52,5 +52,8 @@
   },
   "peerDependencies": {
     "vitest": ">=4.0.0"
+  },
+  "dependencies": {
+    "@vitest/expect": "^4.0.18"
   }
 }

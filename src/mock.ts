@@ -51,7 +51,7 @@ type MockSettledResult =
 /**
  * Mock context matching vitest's structure.
  */
-type MockContext = {
+export type MockContext = {
   calls: any[][];
   results: MockResult[];
   contexts: any[];
@@ -78,11 +78,19 @@ type PathState = {
 };
 
 /**
+ * Symbols for accessing internal chain mock state.
+ */
+export const CHAIN_PATH = Symbol('chainPath');
+export const CHAIN_STATES = Symbol('chainStates');
+
+/**
  * Chain mock instance - callable and has all mock methods.
  */
 export interface ChainMock extends PromiseLike<any> {
   (...args: any[]): ChainMock;
   [key: string]: any;
+  [CHAIN_PATH]: string[];
+  [CHAIN_STATES]: Map<string, PathState>;
   _isMockFunction: true;
   mock: MockContext;
   mockResolvedValue: (value: any) => ChainMock;
@@ -175,6 +183,12 @@ export function chainMock(): ChainMock {
           }
           if (prop === Symbol.toPrimitive) {
             return () => '[ChainMock]';
+          }
+          if (prop === CHAIN_PATH) {
+            return path;
+          }
+          if (prop === CHAIN_STATES) {
+            return pathStates;
           }
           return undefined;
         }
@@ -628,6 +642,8 @@ export function chainMock(): ChainMock {
         if (
           prop === 'mock' ||
           prop === '_isMockFunction' ||
+          prop === CHAIN_PATH ||
+          prop === CHAIN_STATES ||
           prop === 'then' ||
           prop === 'catch' ||
           prop === 'finally' ||
@@ -655,6 +671,20 @@ export function chainMock(): ChainMock {
 
     const callable = function () {} as unknown as ChainMock;
     const proxy = new Proxy(callable, handler) as ChainMock;
+
+    // Expose path and states for matchers
+    Object.defineProperty(proxy, CHAIN_PATH, {
+      value: path,
+      writable: false,
+      enumerable: false,
+      configurable: false,
+    });
+    Object.defineProperty(proxy, CHAIN_STATES, {
+      value: pathStates,
+      writable: false,
+      enumerable: false,
+      configurable: false,
+    });
 
     proxyCache.set(cacheKey, proxy);
     return proxy;
