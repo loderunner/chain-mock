@@ -45,9 +45,47 @@ function getPathState(
 }
 
 /**
- * Verifies that each segment in the chain was called exactly n times.
+ * Verifies that each segment in the chain was called at least once.
  */
 export function toHaveBeenChainCalled(
+  this: MatcherState,
+  received: ChainMock,
+): SyncExpectationResult {
+  const segments = getPathSegments(received);
+
+  if (segments.length === 0) {
+    return {
+      pass: false,
+      message: () => 'Cannot check chain calls on root mock',
+    };
+  }
+
+  const mismatches: string[] = [];
+  for (const segment of segments) {
+    const state = getPathState(received, segment);
+    const callCount = state?.mock.calls.length ?? 0;
+    if (callCount === 0) {
+      mismatches.push(`${segment}: was never called`);
+    }
+  }
+
+  const pass = mismatches.length === 0;
+
+  return {
+    pass,
+    message: () => {
+      if (pass) {
+        return `Expected chain not to have been called, but all segments were called`;
+      }
+      return `Expected all segments to be called at least once, but:\n  ${mismatches.join('\n  ')}`;
+    },
+  };
+}
+
+/**
+ * Verifies that each segment in the chain was called exactly n times.
+ */
+export function toHaveBeenChainCalledTimes(
   this: MatcherState,
   received: ChainMock,
   expected: number,
@@ -88,17 +126,17 @@ export function toHaveBeenChainCalled(
 /**
  * Verifies that each segment in the chain was called exactly once.
  */
-export function toHaveBeenChainCalledOnce(
+export function toHaveBeenChainCalledExactlyOnce(
   this: MatcherState,
   received: ChainMock,
 ): SyncExpectationResult {
-  return toHaveBeenChainCalled.call(this, received, 1);
+  return toHaveBeenChainCalledTimes.call(this, received, 1);
 }
 
 /**
- * Verifies that the last call to each segment had the corresponding arguments.
+ * Verifies that each segment in the chain was called exactly once with the specified arguments.
  */
-export function toHaveBeenChainCalledWith(
+export function toHaveBeenChainCalledExactlyOnceWith(
   this: MatcherState,
   received: ChainMock,
   ...argsPerSegment: any[]
@@ -132,10 +170,17 @@ export function toHaveBeenChainCalledWith(
       continue;
     }
 
-    const lastCall = state.mock.calls[state.mock.calls.length - 1]!;
-    if (!equals(lastCall, expectedArgs)) {
+    if (state.mock.calls.length !== 1) {
       mismatches.push(
-        `${segment}: expected last call with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(lastCall)}`,
+        `${segment}: expected to be called exactly once, but was called ${state.mock.calls.length} time(s)`,
+      );
+      continue;
+    }
+
+    const call = state.mock.calls[0]!;
+    if (!equals(call, expectedArgs)) {
+      mismatches.push(
+        `${segment}: expected call with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(call)}`,
       );
     }
   }
@@ -146,10 +191,81 @@ export function toHaveBeenChainCalledWith(
     pass,
     message: () => {
       if (pass) {
-        return `Expected chain not to have been called with the specified arguments, but all segments matched`;
+        return `Expected chain not to have been called exactly once with the specified arguments, but all segments matched`;
       }
-      return `Expected all segments to match last call arguments, but:\n  ${mismatches.join('\n  ')}`;
+      return `Expected all segments to be called exactly once with the specified arguments, but:\n  ${mismatches.join('\n  ')}`;
     },
+  };
+}
+
+/**
+ * Verifies that any call to the chain had the corresponding arguments at each segment.
+ */
+export function toHaveBeenChainCalledWith(
+  this: MatcherState,
+  received: ChainMock,
+  ...argsPerSegment: any[]
+): SyncExpectationResult {
+  const { equals } = this;
+  const segments = getPathSegments(received);
+
+  if (segments.length === 0) {
+    return {
+      pass: false,
+      message: () => 'Cannot check chain calls on root mock',
+    };
+  }
+
+  if (argsPerSegment.length !== segments.length) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected ${segments.length} argument array(s) (one per segment), but got ${argsPerSegment.length}`,
+    };
+  }
+
+  // Get all states and find the minimum call count
+  const states = segments.map((seg) => getPathState(received, seg));
+  const callCounts = states.map((s) => s?.mock.calls.length ?? 0);
+  const minCalls = Math.min(...callCounts);
+
+  if (minCalls === 0) {
+    return {
+      pass: false,
+      message: () => {
+        const uncalled = segments.filter(
+          (_, i) => (states[i]?.mock.calls.length ?? 0) === 0,
+        );
+        return `Expected chain to have been called with specified arguments, but ${uncalled.join(', ')} was never called`;
+      },
+    };
+  }
+
+  // Check each call index to see if all segments match
+  for (let callIdx = 0; callIdx < minCalls; callIdx++) {
+    let allMatch = true;
+    for (let segIdx = 0; segIdx < segments.length; segIdx++) {
+      const state = states[segIdx]!;
+      const expectedArgs = argsPerSegment[segIdx];
+      const actualCall = state.mock.calls[callIdx]!;
+      if (!equals(actualCall, expectedArgs)) {
+        allMatch = false;
+        break;
+      }
+    }
+    if (allMatch) {
+      return {
+        pass: true,
+        message: () =>
+          `Expected chain not to have been called with the specified arguments, but call ${callIdx + 1} matched`,
+      };
+    }
+  }
+
+  return {
+    pass: false,
+    message: () =>
+      `Expected chain to have been called with ${JSON.stringify(argsPerSegment)}, but no matching call was found`,
   };
 }
 
@@ -229,7 +345,12 @@ export function toHaveBeenLastChainCalledWith(
   received: ChainMock,
   ...argsPerSegment: any[]
 ): SyncExpectationResult {
-  return toHaveBeenChainCalledWith.call(this, received, ...argsPerSegment);
+  return toHaveBeenNthChainCalledWith.call(
+    this,
+    received,
+    received.mock.calls.length,
+    ...argsPerSegment,
+  );
 }
 
 /**
@@ -237,8 +358,10 @@ export function toHaveBeenLastChainCalledWith(
  */
 export const chainMatchers = {
   toHaveBeenChainCalled,
-  toHaveBeenChainCalledOnce,
+  toHaveBeenChainCalledTimes,
   toHaveBeenChainCalledWith,
+  toHaveBeenChainCalledExactlyOnce,
+  toHaveBeenChainCalledExactlyOnceWith,
   toHaveBeenNthChainCalledWith,
   toHaveBeenLastChainCalledWith,
 };

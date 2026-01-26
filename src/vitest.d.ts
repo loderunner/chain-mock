@@ -1,26 +1,26 @@
 interface CustomMatchers<R = unknown> {
   /**
+   * Verifies that each segment in the chain was called at least once.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalled();
+   * ```
+   */
+  toHaveBeenChainCalled(): R;
+
+  /**
    * Verifies that each segment in the chain was called exactly n times.
    *
    * @example
    * ```ts
-   * expect(chain.select.from.where).toHaveBeenChainCalled(2);
+   * expect(chain.select.from.where).toHaveBeenChainCalledTimes(2);
    * ```
    */
-  toHaveBeenChainCalled(expected: number): R;
+  toHaveBeenChainCalledTimes(expected: number): R;
 
   /**
-   * Verifies that each segment in the chain was called exactly once.
-   *
-   * @example
-   * ```ts
-   * expect(chain.select.from.where).toHaveBeenChainCalledOnce();
-   * ```
-   */
-  toHaveBeenChainCalledOnce(): R;
-
-  /**
-   * Verifies that the last call to each segment had the corresponding arguments.
+   * Verifies that any call to the chain had the corresponding arguments at each segment.
    *
    * @example
    * ```ts
@@ -32,6 +32,30 @@ interface CustomMatchers<R = unknown> {
    * ```
    */
   toHaveBeenChainCalledWith(...argsPerSegment: any[]): R;
+
+  /**
+   * Verifies that each segment in the chain was called exactly once.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
+   * ```
+   */
+  toHaveBeenChainCalledExactlyOnce(): R;
+
+  /**
+   * Verifies that each segment in the chain was called exactly once with the specified arguments.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+   *   ['id'],
+   *   ['users'],
+   *   ['active']
+   * );
+   * ```
+   */
+  toHaveBeenChainCalledExactlyOnceWith(...argsPerSegment: any[]): R;
 
   /**
    * Verifies that the Nth call to each segment had the corresponding arguments.
@@ -50,7 +74,6 @@ interface CustomMatchers<R = unknown> {
 
   /**
    * Verifies that the last call to each segment had the corresponding arguments.
-   * Alias for toHaveBeenChainCalledWith.
    *
    * @example
    * ```ts

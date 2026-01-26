@@ -14,11 +14,63 @@ describe('chain matchers', () => {
       chain = chainMock();
     });
 
+    it('passes when all segments called at least once', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(chain.select.from.where).toHaveBeenChainCalled();
+    });
+
+    it('passes when segments called multiple times', () => {
+      chain.select('id').from('users').where('active');
+      chain.select('name').from('posts').where('published');
+
+      expect(chain.select.from.where).toHaveBeenChainCalled();
+    });
+
+    it('fails when no calls made', () => {
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalled();
+      }).toThrow();
+    });
+
+    it('fails when some segments not called', () => {
+      chain.select('id').from('users');
+      // where never called
+
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalled();
+      }).toThrow();
+    });
+
+    it('works with not', () => {
+      expect(chain.select.from.where).not.toHaveBeenChainCalled();
+
+      chain.select('id').from('users').where('active');
+      expect(() => {
+        expect(chain.select.from.where).not.toHaveBeenChainCalled();
+      }).toThrow();
+    });
+
+    it('fails on root mock', () => {
+      expect(() => {
+        chain();
+        expect(chain).toHaveBeenChainCalled();
+      }).toThrow();
+    });
+  });
+
+  describe('toHaveBeenChainCalledTimes', () => {
+    let chain: ChainMock;
+
+    beforeEach(() => {
+      chain = chainMock();
+    });
+
     it('passes when all segments called expected number of times', () => {
       chain.select('id').from('users').where('active');
       chain.select('name').from('posts').where('published');
 
-      expect(chain.select.from.where).toHaveBeenChainCalled(2);
+      expect(chain.select.from.where).toHaveBeenChainCalledTimes(2);
     });
 
     it('fails when segment call counts mismatch', () => {
@@ -26,40 +78,45 @@ describe('chain matchers', () => {
       chain.select('name').from('posts');
 
       expect(() => {
-        expect(chain.select.from.where).toHaveBeenChainCalled(2);
+        expect(chain.select.from.where).toHaveBeenChainCalledTimes(2);
       }).toThrow();
     });
 
     it('fails when no calls made', () => {
       expect(() => {
-        expect(chain.select.from.where).toHaveBeenChainCalled(1);
+        expect(chain.select.from.where).toHaveBeenChainCalledTimes(1);
       }).toThrow();
     });
 
     it('works with not', () => {
       chain.select('id').from('users').where('active');
-      expect(chain.select.from.where).not.toHaveBeenChainCalled(2);
+      expect(chain.select.from.where).not.toHaveBeenChainCalledTimes(2);
+
+      chain.select('id').from('users').where('active');
+      expect(() => {
+        expect(chain.select.from.where).not.toHaveBeenChainCalledTimes(2);
+      }).toThrow();
     });
 
     it('fails on root mock', () => {
       expect(() => {
         chain();
-        expect(chain).toHaveBeenChainCalled(1);
+        expect(chain).toHaveBeenChainCalledTimes(1);
       }).toThrow();
     });
   });
 
-  describe('toHaveBeenChainCalledOnce', () => {
+  describe('toHaveBeenChainCalledExactlyOnce', () => {
     let chain: ChainMock;
 
     beforeEach(() => {
       chain = chainMock();
     });
 
-    it('passes when all segments called once', () => {
+    it('passes when all segments called exactly once', () => {
       chain.select('id').from('users').where('active');
 
-      expect(chain.select.from.where).toHaveBeenChainCalledOnce();
+      expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
     });
 
     it('fails when called multiple times', () => {
@@ -67,22 +124,96 @@ describe('chain matchers', () => {
       chain.select('name').from('posts').where('published');
 
       expect(() => {
-        expect(chain.select.from.where).toHaveBeenChainCalledOnce();
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
       }).toThrow();
     });
 
     it('fails when not called', () => {
       expect(() => {
-        expect(chain.select.from.where).toHaveBeenChainCalledOnce();
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
       }).toThrow();
     });
 
     it('works with not', () => {
-      expect(chain.select.from.where).not.toHaveBeenChainCalledOnce();
+      expect(chain.select.from.where).not.toHaveBeenChainCalledExactlyOnce();
 
       chain.select('id').from('users').where('active');
       chain.select('name').from('posts').where('published');
-      expect(chain.select.from.where).not.toHaveBeenChainCalledOnce();
+      expect(chain.select.from.where).not.toHaveBeenChainCalledExactlyOnce();
+    });
+  });
+
+  describe('toHaveBeenChainCalledExactlyOnceWith', () => {
+    let chain: ChainMock;
+
+    beforeEach(() => {
+      chain = chainMock();
+    });
+
+    it('passes when called exactly once with matching args', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+        ['id'],
+        ['users'],
+        ['active'],
+      );
+    });
+
+    it('fails when called multiple times', () => {
+      chain.select('id').from('users').where('active');
+      chain.select('name').from('posts').where('published');
+
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+          ['id'],
+          ['users'],
+          ['active'],
+        );
+      }).toThrow();
+    });
+
+    it('fails when args mismatch', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+          ['id'],
+          ['users'],
+          ['inactive'],
+        );
+      }).toThrow();
+    });
+
+    it('fails when not called', () => {
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+          ['id'],
+          ['users'],
+          ['active'],
+        );
+      }).toThrow();
+    });
+
+    it('fails when wrong number of args provided', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(() => {
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+          ['id'],
+          ['users'],
+        );
+      }).toThrow();
+    });
+
+    it('works with not', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(chain.select.from.where).not.toHaveBeenChainCalledExactlyOnceWith(
+        ['id'],
+        ['users'],
+        ['inactive'],
+      );
     });
   });
 
@@ -93,10 +224,15 @@ describe('chain matchers', () => {
       chain = chainMock();
     });
 
-    it('passes when last calls match', () => {
+    it('passes when any call matches', () => {
       chain.select('id').from('users').where('active');
       chain.select('name').from('posts').where('published');
 
+      expect(chain.select.from.where).toHaveBeenChainCalledWith(
+        ['id'],
+        ['users'],
+        ['active'],
+      );
       expect(chain.select.from.where).toHaveBeenChainCalledWith(
         ['name'],
         ['posts'],
@@ -268,23 +404,6 @@ describe('chain matchers', () => {
       );
     });
 
-    it('is equivalent to toHaveBeenChainCalledWith', () => {
-      chain.select('id').from('users').where('active');
-      chain.select('name').from('posts').where('published');
-
-      expect(chain.select.from.where).toHaveBeenChainCalledWith(
-        ['name'],
-        ['posts'],
-        ['published'],
-      );
-
-      expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
-        ['name'],
-        ['posts'],
-        ['published'],
-      );
-    });
-
     it('fails when last call args mismatch', () => {
       chain.select('id').from('users').where('active');
       chain.select('name').from('posts').where('published');
@@ -300,11 +419,23 @@ describe('chain matchers', () => {
 
     it('works with not', () => {
       chain.select('id').from('users').where('active');
+      chain.select('name').from('posts').where('published');
 
       expect(chain.select.from.where).not.toHaveBeenLastChainCalledWith(
         ['id'],
         ['users'],
-        ['inactive'],
+        ['active'],
+      );
+    });
+
+    it('passes when the mock has calls on different segments', () => {
+      chain.select('id').from('users').where('active');
+      chain.other();
+
+      expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
+        ['id'],
+        ['users'],
+        ['active'],
       );
     });
   });
@@ -321,13 +452,13 @@ describe('chain matchers', () => {
       chain.select('name').from('posts').where('published');
 
       // select.from should work
-      expect(chain.select.from).toHaveBeenChainCalled(2);
+      expect(chain.select.from).toHaveBeenChainCalledTimes(2);
 
       // select.from.where should only match the second call
       // But select and select.from were called twice, so this will fail
       // This is expected behavior - all segments must match
       expect(() => {
-        expect(chain.select.from.where).toHaveBeenChainCalledOnce();
+        expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
       }).toThrow();
     });
 
@@ -337,7 +468,7 @@ describe('chain matchers', () => {
 
       // Root mock has no segments, so chain matchers should fail
       expect(() => {
-        expect(chain).toHaveBeenChainCalledOnce();
+        expect(chain).toHaveBeenChainCalledExactlyOnce();
       }).toThrow('Cannot check chain calls on root mock');
     });
   });
