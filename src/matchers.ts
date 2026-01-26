@@ -345,10 +345,34 @@ export function toHaveBeenLastChainCalledWith(
   received: ChainMock,
   ...argsPerSegment: any[]
 ): SyncExpectationResult {
+  const segments = getPathSegments(received);
+
+  if (segments.length === 0) {
+    return {
+      pass: false,
+      message: () => 'Cannot check chain calls on root mock',
+    };
+  }
+
+  // Find the maximum call count across all segments
+  const callCounts = segments.map((seg) => {
+    const state = getPathState(received, seg);
+    return state?.mock.calls.length ?? 0;
+  });
+  const lastCallIndex = Math.max(...callCounts);
+
+  if (lastCallIndex === 0) {
+    return {
+      pass: false,
+      message: () =>
+        'Expected chain to have been called, but no segments were called',
+    };
+  }
+
   return toHaveBeenNthChainCalledWith.call(
     this,
     received,
-    received.mock.calls.length,
+    lastCallIndex,
     ...argsPerSegment,
   );
 }
