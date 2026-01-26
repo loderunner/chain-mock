@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { chainMock } from './mock';
+import { type ChainMock, chainMock } from './mock';
 
 describe('chainMock', () => {
   describe('basic chaining', () => {
-    let chain: ReturnType<typeof chainMock>;
+    let chain: ChainMock;
 
     beforeEach(() => {
       chain = chainMock();
