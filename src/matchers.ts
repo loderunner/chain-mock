@@ -380,7 +380,7 @@ export function toHaveBeenLastChainCalledWith(
 /**
  * Object containing all chain matchers for use with expect.extend().
  */
-export const chainMatchers = {
+export const matchers = {
   toHaveBeenChainCalled,
   toHaveBeenChainCalledTimes,
   toHaveBeenChainCalledWith,

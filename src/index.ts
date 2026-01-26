@@ -4,3 +4,5 @@ export {
   clearAllMocks,
   resetAllMocks,
 } from './mock';
+
+export { matchers } from './matchers';

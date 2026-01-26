@@ -1,4 +1,4 @@
-interface CustomMatchers<R = unknown> {
+interface ChainMatchers<R = unknown> {
   /**
    * Verifies that each segment in the chain was called at least once.
    *
@@ -88,8 +88,8 @@ interface CustomMatchers<R = unknown> {
 }
 
 declare module 'vitest' {
-  interface Assertion<T = any> extends CustomMatchers<T> {}
-  interface AsymmetricMatchersContaining extends CustomMatchers {}
+  interface Assertion<T = any> extends ChainMatchers<T> {}
+  interface AsymmetricMatchersContaining extends ChainMatchers {}
 }
 
 export {};

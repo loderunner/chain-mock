@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { chainMatchers } from './matchers';
+import { matchers } from './matchers';
 import { type ChainMock, chainMock } from './mock';
 
 // Extend expect with chain matchers
-expect.extend(chainMatchers);
+expect.extend(matchers);
 
 describe('chain matchers', () => {
   describe('toHaveBeenChainCalled', () => {
