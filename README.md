@@ -1,9 +1,17 @@
 # chain-mock
 
 Mock fluent/chainable APIs (like Drizzle ORM, Knex, Kysely, etc.) with full call
-tracking and cross-framework matcher support (Jest, Vitest, Bun, and more).
+tracking and cross-framework matcher support.
 
-## The Problem
+- [Installation](#installation)
+- [Framework Setup](#framework-setup)
+- [API Reference](#api-reference)
+- [Custom Matchers](#custom-matchers)
+- [Examples](#examples)
+- [Manual Type Augmentation](#manual-type-augmentation)
+- [License](#license)
+
+### The Problem
 
 Testing code that uses chainable/fluent APIs is painful:
 
@@ -22,44 +30,50 @@ vi.mocked(db.select).mockReturnValue({
 });
 ```
 
-## The Solution
+### The Solution
 
 ```typescript
 import { chainMock, matchers } from 'chain-mock';
-import { expect } from 'vitest';
 
 // Setup (once in your test setup file)
 expect.extend(matchers);
 
 // In your test
-const dbMock = chainMock<User[]>();
+const dbMock = chainMock();
 dbMock.mockResolvedValue([{ id: 42, name: 'Dan' }]);
 
-vi.mocked(db.select).mockReturnValue(dbMock);
-
 // Run your code
-const result = await getUserById(42);
+const result = await getUserById(dbMock, 42);
 
-// Assert with ease ✨
+// Assert with ease
 expect(result).toEqual([{ id: 42, name: 'Dan' }]);
-expect(dbMock.select).toHaveBeenChainCalled();
-expect(dbMock.select.from).toHaveBeenChainCalledWith(users);
-expect(dbMock.select.from.where).toHaveBeenChainCalledWith(eq(users.id, 42));
+expect(dbMock.select.from.where).toHaveBeenChainCalledWith(
+  [{ id: users.id }],
+  [users],
+  [eq(users.id, 42)],
+);
 ```
 
 ## Installation
 
 ```bash
 npm install -D chain-mock
+
+# or yarn
+yarn add -D chain-mock
+
+# or pnpm
+pnpm add -D chain-mock
+
+# or bun
+bun add -D chain-mock
 ```
 
-## Setup
+## Framework Setup
 
 ### Vitest
 
-#### 1. Matchers Setup
-
-In your `vitest.setup.ts`:
+**1. Register matchers** in your setup file:
 
 ```typescript
 import { expect } from 'vitest';
@@ -68,7 +82,7 @@ import { matchers } from 'chain-mock';
 expect.extend(matchers);
 ```
 
-#### 2. Type Augmentation via tsconfig.json
+**2. Add type augmentation** in your `tsconfig.json`:
 
 ```json
 {
@@ -78,32 +92,15 @@ expect.extend(matchers);
 }
 ```
 
-#### 3. Type Augmentation via Triple-Slash Reference
-
-In your setup file or a global `.d.ts`:
+Or use a triple-slash reference in a `.d.ts` file:
 
 ```typescript
 /// <reference types="chain-mock/vitest" />
 ```
 
-#### 4. Manual Type Augmentation
-
-Create `chain-mock.d.ts` in your project:
-
-```typescript
-import type { ChainMatchers } from 'chain-mock';
-
-declare module 'vitest' {
-  interface Assertion<T = any> extends ChainMatchers<T> {}
-  interface AsymmetricMatchersContaining extends ChainMatchers {}
-}
-```
-
 ### Jest
 
-#### 1. Matchers Setup
-
-In your `jest.setup.js` or `jest.setup.ts`:
+**1. Register matchers** in your setup file:
 
 ```typescript
 import { matchers } from 'chain-mock';
@@ -111,7 +108,7 @@ import { matchers } from 'chain-mock';
 expect.extend(matchers);
 ```
 
-#### 2. Type Augmentation via tsconfig.json
+**2. Add type augmentation** in your `tsconfig.json`:
 
 ```json
 {
@@ -121,45 +118,15 @@ expect.extend(matchers);
 }
 ```
 
-#### 3. Type Augmentation via Triple-Slash Reference
-
-In your setup file or a global `.d.ts`:
+Or use a triple-slash reference in a `.d.ts` file:
 
 ```typescript
 /// <reference types="chain-mock/jest" />
 ```
 
-#### 4. Manual Type Augmentation
-
-Create `chain-mock.d.ts` in your project:
-
-```typescript
-import type { ChainMatchers } from 'chain-mock';
-
-declare global {
-  namespace jest {
-    interface Matchers<R> extends ChainMatchers<R> {}
-  }
-}
-
-export {};
-```
-
-For `@jest/globals` (explicit imports):
-
-```typescript
-import type { ChainMatchers } from 'chain-mock';
-
-declare module '@jest/expect' {
-  interface Matchers<R> extends ChainMatchers<R> {}
-}
-```
-
 ### Bun
 
-#### 1. Matchers Setup
-
-In your test setup file:
+**1. Register matchers** in your setup file:
 
 ```typescript
 import { expect } from 'bun:test';
@@ -168,7 +135,7 @@ import { matchers } from 'chain-mock';
 expect.extend(matchers);
 ```
 
-#### 2. Type Augmentation via tsconfig.json
+**2. Add type augmentation** in your `tsconfig.json`:
 
 ```json
 {
@@ -178,119 +145,222 @@ expect.extend(matchers);
 }
 ```
 
-#### 3. Type Augmentation via Triple-Slash Reference
-
-In your setup file or a global `.d.ts`:
+Or use a triple-slash reference in a `.d.ts` file:
 
 ```typescript
 /// <reference types="chain-mock/bun" />
 ```
 
-#### 4. Manual Type Augmentation
-
-Create `chain-mock.d.ts` in your project:
-
-```typescript
-import type { ChainMatchers } from 'chain-mock';
-
-declare module 'bun:test' {
-  interface Matchers<T> extends ChainMatchers<T> {}
-  interface AsymmetricMatchers extends ChainMatchers {}
-}
-```
-
-### Custom Framework
-
-For any `expect.extend()`-compatible framework not listed above.
-
-#### 1. Matchers Setup
-
-```typescript
-import { matchers } from 'chain-mock';
-
-// Your framework's expect
-expect.extend(matchers);
-```
-
-#### 2. Type Augmentation via tsconfig.json
-
-Not available for custom frameworks - use manual augmentation.
-
-#### 3. Type Augmentation via Triple-Slash Reference
-
-Not available for custom frameworks - use manual augmentation.
-
-#### 4. Manual Type Augmentation
-
-Create `chain-mock.d.ts` in your project, augmenting your framework's matcher
-interface:
-
-```typescript
-import type { ChainMatchers } from 'chain-mock';
-
-// Replace 'your-framework' and interface names with your framework's equivalents
-declare module 'your-framework' {
-  interface Matchers<T> extends ChainMatchers<T> {}
-}
-```
-
-Consult your framework's documentation for the correct module name and interface
-to extend. The pattern is the same: extend your framework's `Matchers` interface
-with `ChainMatchers`.
-
-## API
+## API Reference
 
 ### `chainMock<T>()`
 
 Creates a chainable mock instance.
 
 ```typescript
-const mock = chainMock<User[]>();
+const mock = chainMock();
+
+// With type parameter for better inference
+const mock = chainMock<typeof db>();
 ```
 
 ### Mock Configuration
 
+All configuration methods are chainable and can be set on any path in the chain.
+
+#### Async Values
+
 ```typescript
-// Set resolved value (for async chains)
+// Resolve with value when awaited
 mock.mockResolvedValue([{ id: 1 }]);
-
-// Set resolved value for next call only
 mock.mockResolvedValueOnce([{ id: 1 }]);
-mock.mockResolvedValueOnce([{ id: 2 }]);
 
-// Set return value (for sync usage)
-mock.mockReturnValue(value);
-mock.mockReturnValueOnce(value);
+// Reject with error when awaited
+mock.mockRejectedValue(new Error('Connection failed'));
+mock.mockRejectedValueOnce(new Error('Temporary failure'));
+```
 
-// Custom implementation
-mock.mockImplementation(() => fetchFromApi());
+#### Sync Values
 
-// Reset all mocked values and calls
-mock.mockReset();
+```typescript
+// Return value synchronously (breaks the chain)
+mock.digest.mockReturnValue('abc123');
+mock.digest.mockReturnValueOnce('abc123');
+```
 
-// Clear calls but keep mocked values
+#### Custom Implementation
+
+```typescript
+// Full control over behavior
+mock.mockImplementation((...args) => computeResult(args));
+mock.mockImplementationOnce((...args) => computeResult(args));
+```
+
+#### Reset and Clear
+
+```typescript
+// Clear call history, keep configured values
 mock.mockClear();
+
+// Reset everything (calls + configured values)
+mock.mockReset();
 ```
 
-### Custom Matchers
-
-After calling `expect.extend(matchers)` in your setup file:
+#### Mock Naming
 
 ```typescript
-expect(mock.method).toHaveBeenChainCalled();
-expect(mock.method).toHaveBeenChainCalledTimes(2);
-expect(mock.method).toHaveBeenChainCalledWith(arg1, arg2);
-expect(mock.method).toHaveBeenLastChainCalledWith(arg);
+mock.mockName('dbSelectMock');
+mock.getMockName(); // 'dbSelectMock'
 ```
 
-### Direct Access to Calls
+### Direct Call Access
 
-You can also access calls directly:
+Access call information directly via the `.mock` property:
 
 ```typescript
-expect(mock.method.mock.calls).toHaveLength(2);
-expect(mock.method.mock.calls[0]).toEqual([arg1, arg2]);
-expect(mock.method.mock.lastCall).toEqual([lastArg]);
+mock.select.mock.calls; // [['id'], ['name']]
+mock.select.mock.lastCall; // ['name']
+mock.select.mock.results; // [{ type: 'return', value: ... }]
+mock.select.mock.contexts; // [thisArg1, thisArg2]
+mock.select.mock.invocationCallOrder; // [1, 3]
+```
+
+### Utility Functions
+
+#### `chainMocked<T>(value)`
+
+Casts a value to its `ChainMock` type. Useful for typing mocked imports.
+
+```typescript
+import { db } from './db';
+
+vi.mock('./db', () => ({
+  db: chainMock(),
+}));
+
+const mockDb = chainMocked(db);
+mockDb.select.mockResolvedValue([{ id: 42 }]);
+```
+
+#### `isChainMock(value)`
+
+Type guard to check if a value is a `ChainMock` instance.
+
+```typescript
+if (isChainMock(maybeChainMock)) {
+  maybeChainMock.mockReturnValue('test');
+}
+```
+
+#### `clearAllMocks()`
+
+Clears call history for all chain mocks. Does not reset configured values.
+
+```typescript
+afterEach(() => {
+  clearAllMocks();
+});
+```
+
+#### `resetAllMocks()`
+
+Resets all chain mocks to their initial state, clearing both call history and
+configured values.
+
+```typescript
+afterEach(() => {
+  resetAllMocks();
+});
+```
+
+## Custom Matchers
+
+After calling `expect.extend(matchers)`:
+
+### `toHaveBeenChainCalled()`
+
+Verifies that each segment in the chain was called at least once.
+
+```typescript
+chain.select('id').from('users').where('active');
+expect(chain.select.from.where).toHaveBeenChainCalled();
+```
+
+### `toHaveBeenChainCalledTimes(n)`
+
+Verifies that each segment in the chain was called exactly `n` times.
+
+```typescript
+chain.select('id').from('users').where('active');
+chain.select('name').from('posts').where('published');
+expect(chain.select.from.where).toHaveBeenChainCalledTimes(2);
+```
+
+### `toHaveBeenChainCalledWith(...argsPerSegment)`
+
+Verifies that any call to the chain had the corresponding arguments at each
+segment. Pass one array of arguments per segment.
+
+```typescript
+chain.select('id').from('users').where('active');
+expect(chain.select.from.where).toHaveBeenChainCalledWith(
+  ['id'],
+  ['users'],
+  ['active'],
+);
+```
+
+### `toHaveBeenChainCalledExactlyOnce()`
+
+Verifies that each segment in the chain was called exactly once.
+
+```typescript
+chain.select('id').from('users').where('active');
+expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
+```
+
+### `toHaveBeenChainCalledExactlyOnceWith(...argsPerSegment)`
+
+Verifies that each segment was called exactly once with the specified arguments.
+
+```typescript
+chain.select('id').from('users').where('active');
+expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+  ['id'],
+  ['users'],
+  ['active'],
+);
+```
+
+### `toHaveBeenNthChainCalledWith(n, ...argsPerSegment)`
+
+Verifies that the Nth call to each segment had the corresponding arguments.
+
+```typescript
+chain.select('id').from('users').where('active');
+chain.select('name').from('posts').where('published');
+
+expect(chain.select.from.where).toHaveBeenNthChainCalledWith(
+  2,
+  ['name'],
+  ['posts'],
+  ['published'],
+);
+```
+
+### `toHaveBeenLastChainCalledWith(...argsPerSegment)`
+
+Verifies that the last call to each segment had the corresponding arguments.
+
+```typescript
+chain.select('id').from('users').where('active');
+chain.select('name').from('posts').where('published');
+
+expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
+  ['name'],
+  ['posts'],
+  ['published'],
+);
 ```
 
 ## Examples
@@ -298,97 +368,90 @@ expect(mock.method.mock.lastCall).toEqual([lastArg]);
 ### Drizzle ORM
 
 ```typescript
-import { chainMock, matchers } from 'chain-mock';
-import { expect } from 'vitest';
+import { chainMock, chainMocked, matchers } from 'chain-mock';
 import { db } from './db';
 import { users } from './schema';
 import { eq } from 'drizzle-orm';
 
-vi.mock('./db');
+vi.mock('./db', () => ({
+  db: chainMock(),
+}));
 expect.extend(matchers);
 
 describe('UserService', () => {
+  const mockDb = chainMocked(db);
+
+  beforeEach(() => {
+    mockDb.mockReset();
+  });
+
   it('finds user by id', async () => {
-    const selectMock = chainMock<User[]>();
-    selectMock.mockResolvedValue([{ id: 42, name: 'Dan' }]);
-    vi.mocked(db.select).mockReturnValue(selectMock);
+    mockDb.mockResolvedValue([{ id: 42, name: 'Dan' }]);
 
     const result = await userService.findById(42);
 
     expect(result).toEqual({ id: 42, name: 'Dan' });
-    expect(selectMock.from).toHaveBeenChainCalledWith(users);
-    expect(selectMock.from.where).toHaveBeenChainCalledWith(eq(users.id, 42));
+    expect(mockDb.select.from.where).toHaveBeenChainCalledWith(
+      [{ id: users.id, name: users.name }],
+      [users],
+      [eq(users.id, 42)],
+    );
   });
 
   it('inserts new user', async () => {
-    const insertMock = chainMock<User[]>();
-    insertMock.mockResolvedValue([{ id: 1, name: 'New User' }]);
-    vi.mocked(db.insert).mockReturnValue(insertMock);
+    mockDb.mockResolvedValue([{ id: 1, name: 'New User' }]);
 
-    const result = await userService.create({ name: 'New User' });
+    await userService.create({ name: 'New User' });
 
-    expect(insertMock.values).toHaveBeenChainCalledWith({ name: 'New User' });
-    expect(insertMock.values.returning).toHaveBeenChainCalled();
+    expect(mockDb.insert.values.returning).toHaveBeenChainCalledWith(
+      [users],
+      [{ name: 'New User' }],
+      [],
+    );
   });
 });
 ```
 
-### Knex
+## Manual Type Augmentation
+
+If the built-in type augmentation doesn't work for your setup, you can manually
+augment your framework's types:
 
 ```typescript
-const knexMock = chainMock<User[]>();
-knexMock.mockResolvedValue([{ id: 1, name: 'Test' }]);
+import type { ChainMatchers } from 'chain-mock';
 
-vi.mocked(knex).mockReturnValue(knexMock);
-
-await knex('users').where('id', 1).first();
-
-expect(knexMock.where).toHaveBeenChainCalledWith('id', 1);
-expect(knexMock.where.first).toHaveBeenChainCalled();
-```
-
-### Multiple Sequential Responses
-
-```typescript
-const mock = chainMock<number[]>();
-mock
-  .mockResolvedValueOnce([1, 2, 3])
-  .mockResolvedValueOnce([4, 5, 6])
-  .mockResolvedValue([]); // Default after queue exhausted
-
-await mock.query(); // [1, 2, 3]
-await mock.query(); // [4, 5, 6]
-await mock.query(); // []
-```
-
-## How It Works
-
-`chainMock` uses JavaScript Proxies to:
-
-1. **Track calls** at every level of the chain
-2. **Return itself** for any method call, enabling infinite chaining
-3. **Resolve to your mocked value** when awaited
-4. **Cache proxy instances** so `mock.select` always returns the same object
-
-The chain tracking is path-based, so `mock.select.from` tracks calls differently
-than `mock.select.where`.
-
-## TypeScript
-
-Full TypeScript support with generics:
-
-```typescript
-interface User {
-  id: number;
-  name: string;
+// For Vitest
+declare module 'vitest' {
+  interface Assertion<T = any> extends ChainMatchers<T> {}
+  interface AsymmetricMatchersContaining extends ChainMatchers {}
 }
 
-const mock = chainMock<User[]>();
-mock.mockResolvedValue([{ id: 1, name: 'Test' }]);
+// For Jest with @jest/globals
+declare module 'expect' {
+  interface Matchers<R, T> extends ChainMatchers<R> {}
+}
 
-const result = await mock.query(); // result is User[]
+// For Jest with global expect
+declare global {
+  namespace jest {
+    interface Matchers<R, T> extends ChainMatchers<R> {}
+  }
+}
+
+// For Bun
+declare module 'bun:test' {
+  interface Matchers<T> extends ChainMatchers<T> {}
+  interface AsymmetricMatchers extends ChainMatchers {}
+}
+
+// For other expect-based framework
+declare module 'other-expect' {
+  interface Matchers<R> extends ChainMatchers<R> {}
+}
 ```
 
 ## License
 
-MIT
+Apache-2.0
+
+Copyright 2026 Charles Francoise
