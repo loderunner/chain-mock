@@ -8,11 +8,11 @@ import {
   CHAIN_PATH,
   CHAIN_STATES,
   type ChainMock,
-  type MockContext,
+  type ChainMockContext,
 } from './mock';
 
 type PathState = {
-  mock: MockContext;
+  mock: ChainMockContext<any>;
 };
 
 /**

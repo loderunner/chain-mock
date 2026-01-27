@@ -9,63 +9,98 @@
  */
 
 /**
- * Mock result types matching vitest's structure.
+ * Procedure type matching vitest's structure.
  */
-type MockResultReturn = {
+type Procedure = (...args: any[]) => any;
+
+/**
+ * Detects if T is `any`. Returns true for `any`, false otherwise.
+ * Uses the fact that `any` is assignable to `0 & 1` (impossible intersection).
+ */
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+/**
+ * Extract parameters from T if it's a function, otherwise returns never[].
+ * Uses tuple wrapper `[T]` to prevent distribution over `any` - without it,
+ * `any extends Procedure` would union both branches, producing `unknown[] | never[]`.
+ * Special-cases `any` to return `any[]` instead of `unknown[]` since `Parameters<any>`
+ * returns `unknown[]` but we want `any[]` for untyped convenience mocks.
+ */
+type ChainMockParams<T> =
+  IsAny<T> extends true
+    ? any[]
+    : [T] extends [Procedure]
+      ? Parameters<T>
+      : never[];
+
+/**
+ * Extract return type from T if it's a function, otherwise returns never.
+ * Uses tuple wrapper `[T]` to prevent distribution over `any` for consistency.
+ * Note: `ReturnType<any>` already returns `any`, so no special case needed.
+ */
+type ChainMockReturn<T> = [T] extends [Procedure] ? ReturnType<T> : never;
+
+/**
+ * Chain mock result types matching vitest's structure.
+ */
+type ChainMockResultReturn<T> = {
   type: 'return';
-  value: any;
+  value: T;
 };
 
-type MockResultThrow = {
+type ChainMockResultThrow = {
   type: 'throw';
   value: any;
 };
 
-type MockResultIncomplete = {
+type ChainMockResultIncomplete = {
   type: 'incomplete';
   value: undefined;
 };
 
-type MockResult = MockResultReturn | MockResultThrow | MockResultIncomplete;
+export type ChainMockResult<T> =
+  | ChainMockResultReturn<T>
+  | ChainMockResultThrow
+  | ChainMockResultIncomplete;
 
-type MockSettledResultFulfilled = {
+type ChainMockSettledResultFulfilled<T> = {
   type: 'fulfilled';
-  value: any;
+  value: T;
 };
 
-type MockSettledResultRejected = {
+type ChainMockSettledResultRejected = {
   type: 'rejected';
   value: any;
 };
 
-type MockSettledResultIncomplete = {
+type ChainMockSettledResultIncomplete = {
   type: 'incomplete';
   value: undefined;
 };
 
-type MockSettledResult =
-  | MockSettledResultFulfilled
-  | MockSettledResultRejected
-  | MockSettledResultIncomplete;
+export type ChainMockSettledResult<T> =
+  | ChainMockSettledResultFulfilled<T>
+  | ChainMockSettledResultRejected
+  | ChainMockSettledResultIncomplete;
 
 /**
- * Mock context matching vitest's structure.
+ * Chain mock context matching vitest's structure.
  */
-export type MockContext = {
-  calls: any[][];
-  results: MockResult[];
-  contexts: any[];
+export type ChainMockContext<T> = {
+  calls: ChainMockParams<T>[];
+  results: ChainMockResult<ChainMockReturn<T>>[];
+  contexts: ThisParameterType<T>[];
   instances: any[];
   invocationCallOrder: number[];
-  settledResults: MockSettledResult[];
-  get lastCall(): any[] | undefined;
+  settledResults: ChainMockSettledResult<Awaited<ChainMockReturn<T>>>[];
+  get lastCall(): ChainMockParams<T>[number] | undefined;
 };
 
 /**
  * State for a single path in the chain.
  */
 type PathState = {
-  mock: MockContext;
+  mock: ChainMockContext<any>;
   resolvedValue: any;
   resolvedValueQueue: any[];
   rejectedValue: any;
@@ -84,28 +119,64 @@ export const CHAIN_PATH = Symbol('chainPath');
 export const CHAIN_STATES = Symbol('chainStates');
 
 /**
- * Chain mock instance - callable and has all mock methods.
+ * Base chain mock interface with mock methods and context.
  */
-export interface ChainMock extends PromiseLike<any> {
-  (...args: any[]): ChainMock;
-  [key: string]: any;
+type ChainMockBase<T> = {
+  mock: ChainMockContext<T>;
+  mockResolvedValue: T extends Procedure
+    ? (value: Awaited<ChainMockReturn<T>>) => ChainMock<T>
+    : never;
+  mockResolvedValueOnce: T extends Procedure
+    ? (value: Awaited<ChainMockReturn<T>>) => ChainMock<T>
+    : never;
+  mockRejectedValue: T extends Procedure
+    ? (error: unknown) => ChainMock<T>
+    : never;
+  mockRejectedValueOnce: T extends Procedure
+    ? (error: unknown) => ChainMock<T>
+    : never;
+  mockReturnValue: T extends Procedure
+    ? (value: ChainMockReturn<T>) => ChainMock<T>
+    : never;
+  mockReturnValueOnce: T extends Procedure
+    ? (value: ChainMockReturn<T>) => ChainMock<T>
+    : never;
+  mockImplementation: T extends Procedure ? (fn: T) => ChainMock<T> : never;
+  mockImplementationOnce: T extends Procedure ? (fn: T) => ChainMock<T> : never;
+  mockReset: () => ChainMock<T>;
+  mockClear: () => ChainMock<T>;
+  mockName: (name: string) => ChainMock<T>;
+  getMockName: () => string;
   [CHAIN_PATH]: string[];
   [CHAIN_STATES]: Map<string, PathState>;
   _isMockFunction: true;
-  mock: MockContext;
-  mockResolvedValue: (value: any) => ChainMock;
-  mockResolvedValueOnce: (value: any) => ChainMock;
-  mockRejectedValue: (error: any) => ChainMock;
-  mockRejectedValueOnce: (error: any) => ChainMock;
-  mockReturnValue: (value: any) => ChainMock;
-  mockReturnValueOnce: (value: any) => ChainMock;
-  mockImplementation: (fn: (...args: any[]) => any) => ChainMock;
-  mockImplementationOnce: (fn: (...args: any[]) => any) => ChainMock;
-  mockReset: () => ChainMock;
-  mockClear: () => ChainMock;
-  mockName: (name: string) => ChainMock;
-  getMockName: () => string;
-}
+};
+
+/**
+ * Callable signature - makes ChainMock callable when T is a function or any.
+ * Uses tuple wrapper so `any` resolves to true (without it, `any extends X` distributes).
+ */
+type ChainMockCallable<T> = [T] extends [Procedure]
+  ? (...args: Parameters<T>) => ChainMock<ReturnType<T>>
+  : unknown;
+
+/**
+ * Property access - maps T's properties to ChainMock.
+ * For functions, also maps ReturnType properties for look-through behavior.
+ */
+type ChainMockProperties<T> = {
+  [K in keyof T]: ChainMock<T[K]>;
+} & (T extends Procedure
+  ? { [K in keyof ReturnType<T>]: ChainMock<ReturnType<T>[K]> }
+  : {});
+
+/**
+ * Chain mock instance - callable and has all mock methods.
+ */
+export type ChainMock<T = any> = ChainMockBase<T> &
+  ChainMockCallable<T> &
+  ChainMockProperties<T> &
+  PromiseLike<ChainMockReturn<T>>;
 
 let invocationCallCounter = 1;
 
@@ -131,7 +202,7 @@ const mockRegistry = new Set<ChainMock>();
  * expect(mockDb.select.from).toHaveBeenCalledWith('users');
  * ```
  */
-export function chainMock(): ChainMock {
+export function chainMock<T = any>(): ChainMock<T> {
   const pathStates = new Map<string, PathState>();
   const proxyCache = new Map<string, ChainMock>();
 
@@ -692,7 +763,7 @@ export function chainMock(): ChainMock {
 
   const root = getOrCreateProxy();
   mockRegistry.add(root);
-  return root;
+  return root as unknown as ChainMock<T>;
 }
 
 /**
@@ -728,4 +799,51 @@ export function resetAllMocks(): void {
     mock.mockReset();
   }
   mockRegistry.clear();
+}
+
+/**
+ * Type guard to check if a value is a ChainMock instance.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a ChainMock instance
+ *
+ * @example
+ * ```ts
+ * if (isChainMock(maybeChainMock)) {
+ *   maybeChainMock.mockReturnValue('test');
+ * }
+ * ```
+ */
+export function isChainMock(value: unknown): value is ChainMock {
+  return (
+    typeof value === 'function' &&
+    '_isMockFunction' in value &&
+    value._isMockFunction === true &&
+    CHAIN_PATH in value &&
+    CHAIN_STATES in value
+  );
+}
+
+/**
+ * Casts a value to its ChainMock type. Useful for typing mocked imports.
+ * Similar to `vi.mocked()`, this returns the same value but with ChainMock typing.
+ *
+ * @param value - The value to cast (typically an import that was mocked with `chainMock()`)
+ * @returns The same value typed as `ChainMock<T>`
+ *
+ * @example
+ * ```ts
+ * import { db } from './db';
+ *
+ * vi.mock('./db', () => ({
+ *   db: chainMock(),
+ * }));
+ *
+ * const mockDb = chainMocked(db);
+ *
+ * mockDb.select.mockResolvedValue([{ id: 42 }]);
+ * ```
+ */
+export function chainMocked<T>(value: T): ChainMock<T> {
+  return value as unknown as ChainMock<T>;
 }
