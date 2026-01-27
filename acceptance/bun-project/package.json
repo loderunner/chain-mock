@@ -1,0 +1,16 @@
+{
+  "name": "bun-acceptance-test",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "chain-mock": "file:./chain-mock-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -21,6 +21,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "acceptance/frameworks.test.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "acceptance/vitest-project/**/*",
+    "acceptance/jest-project/**/*",
+    "acceptance/bun-project/**/*"
+  ]
 }

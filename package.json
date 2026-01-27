@@ -1,7 +1,7 @@
 {
   "name": "chain-mock",
   "version": "0.1.0",
-  "description": "Mock fluent/chainable APIs with full call tracking and vitest compatibility",
+  "description": "Mock fluent/chainable APIs with full call tracking and cross-framework matcher support",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -11,18 +11,30 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./vitest": {
+      "types": "./dist/vitest.d.ts"
+    },
+    "./jest": {
+      "types": "./dist/jest.d.ts"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.ts"
     }
   },
   "files": [
     "dist"
   ],
   "keywords": [
-    "vitest",
     "mock",
     "chainable",
     "fluent",
     "testing",
-    "proxy"
+    "proxy",
+    "jest",
+    "vitest",
+    "bun",
+    "matchers"
   ],
   "scripts": {
     "lint": "prettier --check . && eslint --max-warnings 0 .",
@@ -46,14 +58,25 @@
     "prettier": "3.7.4",
     "rolldown": "1.0.0-rc.1",
     "rolldown-plugin-dts": "^0.21.6",
+    "testcontainers": "^11.11.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.51.0",
     "vitest": "4.0.18"
   },
   "peerDependencies": {
+    "@types/bun": ">=1.0.0",
+    "jest": ">=29.0.0",
     "vitest": ">=4.0.0"
   },
-  "dependencies": {
-    "@vitest/expect": "^4.0.18"
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    },
+    "jest": {
+      "optional": true
+    },
+    "@types/bun": {
+      "optional": true
+    }
   }
 }

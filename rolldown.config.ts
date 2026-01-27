@@ -24,12 +24,13 @@ export default defineConfig([
     ],
   },
   {
-    input: 'src/index.ts',
+    input: ['src/index.ts', 'src/vitest.d.ts', 'src/jest.d.ts', 'src/bun.d.ts'],
     platform: 'node',
     external,
     plugins: [
       dts({
         emitDtsOnly: true,
+        emitJs: false,
       }),
     ],
     output: {

@@ -1,0 +1,20 @@
+{
+  "name": "jest-acceptance-test",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chain-mock": "file:./chain-mock-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@swc/core": "^1.15.10",
+    "@swc/jest": "^0.2.39",
+    "@types/node": "^24.0.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.9.0"
+  }
+}

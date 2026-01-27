@@ -11,7 +11,13 @@ import tseslint from 'typescript-eslint';
 export default [
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   {
-    ignores: ['dist/**/*', 'node_modules/**/*'],
+    ignores: [
+      'dist/**/*',
+      'node_modules/**/*',
+      'acceptance/vitest-project/**/*',
+      'acceptance/jest-project/**/*',
+      'acceptance/bun-project/**/*',
+    ],
   },
   {
     languageOptions: { globals: { ...globals.browser } },

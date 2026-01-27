@@ -1,0 +1,17 @@
+{
+  "name": "vitest-acceptance-test",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chain-mock": "file:./chain-mock-0.1.0.tgz",
+    "vitest": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -7,4 +7,4 @@ export {
   resetAllMocks,
 } from './mock';
 
-export { matchers } from './matchers';
+export { type ChainMatchers, matchers } from './matchers';

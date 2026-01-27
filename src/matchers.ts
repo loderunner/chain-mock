@@ -1,14 +1,124 @@
 /**
- * Custom vitest matchers for chain mocks.
+ * Custom matchers for chain mocks.
+ * Framework-agnostic implementation compatible with Jest, Vitest, Bun, and other expect.extend()-compatible frameworks.
  */
 
-import type { MatcherState, SyncExpectationResult } from '@vitest/expect';
+/**
+ * Matcher result returned by custom matchers.
+ */
+type MatcherResult = {
+  pass: boolean;
+  message: () => string;
+};
+
+/**
+ * Matcher context provided by the testing framework.
+ * Matchers receive this as their `this` binding.
+ */
+type MatcherContext = {
+  equals: (a: unknown, b: unknown) => boolean;
+  isNot?: boolean;
+};
+
+/**
+ * Type definitions for chain mock matchers.
+ * Export this interface so users can import it for manual type augmentation.
+ */
+export interface ChainMatchers<R = unknown> {
+  /**
+   * Verifies that each segment in the chain was called at least once.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalled();
+   * ```
+   */
+  toHaveBeenChainCalled(): R;
+
+  /**
+   * Verifies that each segment in the chain was called exactly n times.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledTimes(2);
+   * ```
+   */
+  toHaveBeenChainCalledTimes(expected: number): R;
+
+  /**
+   * Verifies that any call to the chain had the corresponding arguments at each segment.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledWith(
+   *   ['id'],
+   *   ['users'],
+   *   ['active']
+   * );
+   * ```
+   */
+  toHaveBeenChainCalledWith(...argsPerSegment: any[]): R;
+
+  /**
+   * Verifies that each segment in the chain was called exactly once.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
+   * ```
+   */
+  toHaveBeenChainCalledExactlyOnce(): R;
+
+  /**
+   * Verifies that each segment in the chain was called exactly once with the specified arguments.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnceWith(
+   *   ['id'],
+   *   ['users'],
+   *   ['active']
+   * );
+   * ```
+   */
+  toHaveBeenChainCalledExactlyOnceWith(...argsPerSegment: any[]): R;
+
+  /**
+   * Verifies that the Nth call to each segment had the corresponding arguments.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenNthChainCalledWith(
+   *   2,
+   *   ['name'],
+   *   ['posts'],
+   *   ['published']
+   * );
+   * ```
+   */
+  toHaveBeenNthChainCalledWith(n: number, ...argsPerSegment: any[]): R;
+
+  /**
+   * Verifies that the last call to each segment had the corresponding arguments.
+   *
+   * @example
+   * ```ts
+   * expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
+   *   ['id'],
+   *   ['users'],
+   *   ['active']
+   * );
+   * ```
+   */
+  toHaveBeenLastChainCalledWith(...argsPerSegment: any[]): R;
+}
 
 import {
   CHAIN_PATH,
   CHAIN_STATES,
   type ChainMock,
   type ChainMockContext,
+  isChainMock,
 } from './mock';
 
 type PathState = {
@@ -48,9 +158,16 @@ function getPathState(
  * Verifies that each segment in the chain was called at least once.
  */
 export function toHaveBeenChainCalled(
-  this: MatcherState,
-  received: ChainMock,
-): SyncExpectationResult {
+  this: MatcherContext,
+  received: unknown,
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {
@@ -86,10 +203,17 @@ export function toHaveBeenChainCalled(
  * Verifies that each segment in the chain was called exactly n times.
  */
 export function toHaveBeenChainCalledTimes(
-  this: MatcherState,
-  received: ChainMock,
+  this: MatcherContext,
+  received: unknown,
   expected: number,
-): SyncExpectationResult {
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {
@@ -127,9 +251,9 @@ export function toHaveBeenChainCalledTimes(
  * Verifies that each segment in the chain was called exactly once.
  */
 export function toHaveBeenChainCalledExactlyOnce(
-  this: MatcherState,
-  received: ChainMock,
-): SyncExpectationResult {
+  this: MatcherContext,
+  received: unknown,
+): MatcherResult {
   return toHaveBeenChainCalledTimes.call(this, received, 1);
 }
 
@@ -137,11 +261,17 @@ export function toHaveBeenChainCalledExactlyOnce(
  * Verifies that each segment in the chain was called exactly once with the specified arguments.
  */
 export function toHaveBeenChainCalledExactlyOnceWith(
-  this: MatcherState,
-  received: ChainMock,
+  this: MatcherContext,
+  received: unknown,
   ...argsPerSegment: any[]
-): SyncExpectationResult {
-  const { equals } = this;
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {
@@ -178,7 +308,7 @@ export function toHaveBeenChainCalledExactlyOnceWith(
     }
 
     const call = state.mock.calls[0]!;
-    if (!equals(call, expectedArgs)) {
+    if (!this.equals(call, expectedArgs)) {
       mismatches.push(
         `${segment}: expected call with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(call)}`,
       );
@@ -202,11 +332,17 @@ export function toHaveBeenChainCalledExactlyOnceWith(
  * Verifies that any call to the chain had the corresponding arguments at each segment.
  */
 export function toHaveBeenChainCalledWith(
-  this: MatcherState,
-  received: ChainMock,
+  this: MatcherContext,
+  received: unknown,
   ...argsPerSegment: any[]
-): SyncExpectationResult {
-  const { equals } = this;
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {
@@ -248,7 +384,7 @@ export function toHaveBeenChainCalledWith(
       const state = states[segIdx]!;
       const expectedArgs = argsPerSegment[segIdx];
       const actualCall = state.mock.calls[callIdx]!;
-      if (!equals(actualCall, expectedArgs)) {
+      if (!this.equals(actualCall, expectedArgs)) {
         allMatch = false;
         break;
       }
@@ -273,12 +409,18 @@ export function toHaveBeenChainCalledWith(
  * Verifies that the Nth call to each segment had the corresponding arguments.
  */
 export function toHaveBeenNthChainCalledWith(
-  this: MatcherState,
-  received: ChainMock,
+  this: MatcherContext,
+  received: unknown,
   n: number,
   ...argsPerSegment: any[]
-): SyncExpectationResult {
-  const { equals } = this;
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {
@@ -317,7 +459,7 @@ export function toHaveBeenNthChainCalledWith(
     }
 
     const nthCall = state.mock.calls[n - 1]!;
-    if (!equals(nthCall, expectedArgs)) {
+    if (!this.equals(nthCall, expectedArgs)) {
       mismatches.push(
         `${segment}: expected call ${n} with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(nthCall)}`,
       );
@@ -341,10 +483,17 @@ export function toHaveBeenNthChainCalledWith(
  * Verifies that the last call to each segment had the corresponding arguments.
  */
 export function toHaveBeenLastChainCalledWith(
-  this: MatcherState,
-  received: ChainMock,
+  this: MatcherContext,
+  received: unknown,
   ...argsPerSegment: any[]
-): SyncExpectationResult {
+): MatcherResult {
+  if (!isChainMock(received)) {
+    return {
+      pass: false,
+      message: () => 'Expected value to be a ChainMock instance',
+    };
+  }
+
   const segments = getPathSegments(received);
 
   if (segments.length === 0) {

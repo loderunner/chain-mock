@@ -1,7 +1,7 @@
 # chain-mock
 
 Mock fluent/chainable APIs (like Drizzle ORM, Knex, Kysely, etc.) with full call
-tracking and vitest compatibility.
+tracking and cross-framework matcher support (Jest, Vitest, Bun, and more).
 
 ## The Problem
 
@@ -25,10 +25,11 @@ vi.mocked(db.select).mockReturnValue({
 ## The Solution
 
 ```typescript
-import { chainMock, setupChainMockMatchers } from 'chain-mock';
+import { chainMock, matchers } from 'chain-mock';
+import { expect } from 'vitest';
 
 // Setup (once in your test setup file)
-setupChainMockMatchers(expect);
+expect.extend(matchers);
 
 // In your test
 const dbMock = chainMock<User[]>();
@@ -54,24 +55,188 @@ npm install -D chain-mock
 
 ## Setup
 
-Add to your test setup file:
+### Vitest
+
+#### 1. Matchers Setup
+
+In your `vitest.setup.ts`:
 
 ```typescript
-// vitest.setup.ts
 import { expect } from 'vitest';
-import { setupChainMockMatchers } from 'chain-mock';
+import { matchers } from 'chain-mock';
 
-setupChainMockMatchers(expect);
+expect.extend(matchers);
 ```
+
+#### 2. Type Augmentation via tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "types": ["chain-mock/vitest"]
+  }
+}
+```
+
+#### 3. Type Augmentation via Triple-Slash Reference
+
+In your setup file or a global `.d.ts`:
 
 ```typescript
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    setupFiles: ['./vitest.setup.ts'],
-  },
-});
+/// <reference types="chain-mock/vitest" />
 ```
+
+#### 4. Manual Type Augmentation
+
+Create `chain-mock.d.ts` in your project:
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+declare module 'vitest' {
+  interface Assertion<T = any> extends ChainMatchers<T> {}
+  interface AsymmetricMatchersContaining extends ChainMatchers {}
+}
+```
+
+### Jest
+
+#### 1. Matchers Setup
+
+In your `jest.setup.js` or `jest.setup.ts`:
+
+```typescript
+import { matchers } from 'chain-mock';
+
+expect.extend(matchers);
+```
+
+#### 2. Type Augmentation via tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "types": ["chain-mock/jest"]
+  }
+}
+```
+
+#### 3. Type Augmentation via Triple-Slash Reference
+
+In your setup file or a global `.d.ts`:
+
+```typescript
+/// <reference types="chain-mock/jest" />
+```
+
+#### 4. Manual Type Augmentation
+
+Create `chain-mock.d.ts` in your project:
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+declare global {
+  namespace jest {
+    interface Matchers<R> extends ChainMatchers<R> {}
+  }
+}
+
+export {};
+```
+
+For `@jest/globals` (explicit imports):
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+declare module '@jest/expect' {
+  interface Matchers<R> extends ChainMatchers<R> {}
+}
+```
+
+### Bun
+
+#### 1. Matchers Setup
+
+In your test setup file:
+
+```typescript
+import { expect } from 'bun:test';
+import { matchers } from 'chain-mock';
+
+expect.extend(matchers);
+```
+
+#### 2. Type Augmentation via tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "types": ["bun", "chain-mock/bun"]
+  }
+}
+```
+
+#### 3. Type Augmentation via Triple-Slash Reference
+
+In your setup file or a global `.d.ts`:
+
+```typescript
+/// <reference types="chain-mock/bun" />
+```
+
+#### 4. Manual Type Augmentation
+
+Create `chain-mock.d.ts` in your project:
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+declare module 'bun:test' {
+  interface Matchers<T> extends ChainMatchers<T> {}
+  interface AsymmetricMatchers extends ChainMatchers {}
+}
+```
+
+### Custom Framework
+
+For any `expect.extend()`-compatible framework not listed above.
+
+#### 1. Matchers Setup
+
+```typescript
+import { matchers } from 'chain-mock';
+
+// Your framework's expect
+expect.extend(matchers);
+```
+
+#### 2. Type Augmentation via tsconfig.json
+
+Not available for custom frameworks - use manual augmentation.
+
+#### 3. Type Augmentation via Triple-Slash Reference
+
+Not available for custom frameworks - use manual augmentation.
+
+#### 4. Manual Type Augmentation
+
+Create `chain-mock.d.ts` in your project, augmenting your framework's matcher
+interface:
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+// Replace 'your-framework' and interface names with your framework's equivalents
+declare module 'your-framework' {
+  interface Matchers<T> extends ChainMatchers<T> {}
+}
+```
+
+Consult your framework's documentation for the correct module name and interface
+to extend. The pattern is the same: extend your framework's `Matchers` interface
+with `ChainMatchers`.
 
 ## API
 
@@ -109,7 +274,7 @@ mock.mockClear();
 
 ### Custom Matchers
 
-After calling `setupChainMockMatchers(expect)`:
+After calling `expect.extend(matchers)` in your setup file:
 
 ```typescript
 expect(mock.method).toHaveBeenChainCalled();
@@ -133,13 +298,14 @@ expect(mock.method.mock.lastCall).toEqual([lastArg]);
 ### Drizzle ORM
 
 ```typescript
-import { chainMock, setupChainMockMatchers } from 'chain-mock';
+import { chainMock, matchers } from 'chain-mock';
+import { expect } from 'vitest';
 import { db } from './db';
 import { users } from './schema';
 import { eq } from 'drizzle-orm';
 
 vi.mock('./db');
-setupChainMockMatchers(expect);
+expect.extend(matchers);
 
 describe('UserService', () => {
   it('finds user by id', async () => {
