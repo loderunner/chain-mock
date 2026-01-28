@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Mock fluent/chainable APIs with full call tracking and cross-framework matcher support",
   "license": "Apache-2.0",
+  "author": "Charles Francoise",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -24,8 +25,27 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24.9.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loderunner/chain-mock.git"
+  },
+  "homepage": "https://github.com/loderunner/chain-mock#readme",
+  "bugs": {
+    "url": "https://github.com/loderunner/chain-mock/issues"
+  },
+  "funding": {
+    "type": "ko-fi",
+    "url": "https://ko-fi.com/loderunner"
+  },
   "keywords": [
     "mock",
     "chainable",

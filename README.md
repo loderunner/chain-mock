@@ -1,15 +1,7 @@
 # chain-mock
 
-Mock fluent/chainable APIs (Drizzle, Express, D3, Cheerio, ioredis, SuperAgent,
-and more) with full call tracking and cross-framework matcher support.
-
-- [Installation](#installation)
-- [Framework Setup](#framework-setup)
-- [API Reference](#api-reference)
-- [Custom Matchers](#custom-matchers)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
-- [License](#license)
+Mock fluent/chainable APIs (Drizzle, Express, D3, Cheerio, ioredis, and more)
+with full call tracking and cross-framework matcher support.
 
 ### The Problem
 
@@ -53,6 +45,16 @@ expect(dbMock.select.from.where).toHaveBeenChainCalledWith(
   [eq(users.id, 42)],
 );
 ```
+
+### Table of Contents
+
+- [Installation](#installation)
+- [Framework Setup](#framework-setup)
+- [API Reference](#api-reference)
+- [Custom Matchers](#custom-matchers)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Installation
 
