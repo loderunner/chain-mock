@@ -129,14 +129,28 @@ type PathState = {
  * Extracts path segments from a chain mock.
  * For path ['select', 'from', 'where'], returns:
  * ['select', 'select.from', 'select.from.where']
+ * If root was called as a function, prepends '' to include root:
+ * ['', 'select', 'select.from', 'select.from.where']
  */
 function getPathSegments(chainMock: ChainMock): string[] {
   const path = chainMock[CHAIN_PATH];
-  if (path.length === 0) {
-    return [];
-  }
+  const states = chainMock[CHAIN_STATES];
+
+  // Check if root was called as a function
+  const rootState = states.get('');
+  const rootCalled = (rootState?.mock.calls.length ?? 0) > 0;
 
   const segments: string[] = [];
+
+  // If root was called, include it as the first segment
+  if (rootCalled) {
+    segments.push('');
+  }
+
+  if (path.length === 0) {
+    return segments;
+  }
+
   for (let i = 0; i < path.length; i++) {
     segments.push(path.slice(0, i + 1).join('.'));
   }
@@ -182,7 +196,8 @@ export function toHaveBeenChainCalled(
     const state = getPathState(received, segment);
     const callCount = state?.mock.calls.length ?? 0;
     if (callCount === 0) {
-      mismatches.push(`${segment}: was never called`);
+      const segmentName = segment === '' ? '(root)' : segment;
+      mismatches.push(`${segmentName}: was never called`);
     }
   }
 
@@ -228,7 +243,8 @@ export function toHaveBeenChainCalledTimes(
     const state = getPathState(received, segment);
     const callCount = state?.mock.calls.length ?? 0;
     if (callCount !== expected) {
-      mismatches.push(`${segment}: expected ${expected}, got ${callCount}`);
+      const segmentName = segment === '' ? '(root)' : segment;
+      mismatches.push(`${segmentName}: expected ${expected}, got ${callCount}`);
     }
   }
 
@@ -282,27 +298,30 @@ export function toHaveBeenChainCalledExactlyOnceWith(
   }
 
   if (argsPerSegment.length !== segments.length) {
+    const rootIncluded = segments[0] === '';
+    const rootNote = rootIncluded ? ' including root call' : '';
     return {
       pass: false,
       message: () =>
-        `Expected ${segments.length} argument array(s) (one per segment), but got ${argsPerSegment.length}`,
+        `Expected ${segments.length} argument array(s) (one per segment${rootNote}), but got ${argsPerSegment.length}`,
     };
   }
 
   const mismatches: string[] = [];
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i]!;
+    const segmentName = segment === '' ? '(root)' : segment;
     const expectedArgs = argsPerSegment[i];
     const state = getPathState(received, segment);
 
     if (state === undefined || state.mock.calls.length === 0) {
-      mismatches.push(`${segment}: was never called`);
+      mismatches.push(`${segmentName}: was never called`);
       continue;
     }
 
     if (state.mock.calls.length !== 1) {
       mismatches.push(
-        `${segment}: expected to be called exactly once, but was called ${state.mock.calls.length} time(s)`,
+        `${segmentName}: expected to be called exactly once, but was called ${state.mock.calls.length} time(s)`,
       );
       continue;
     }
@@ -310,7 +329,7 @@ export function toHaveBeenChainCalledExactlyOnceWith(
     const call = state.mock.calls[0]!;
     if (!this.equals(call, expectedArgs)) {
       mismatches.push(
-        `${segment}: expected call with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(call)}`,
+        `${segmentName}: expected call with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(call)}`,
       );
     }
   }
@@ -353,10 +372,12 @@ export function toHaveBeenChainCalledWith(
   }
 
   if (argsPerSegment.length !== segments.length) {
+    const rootIncluded = segments[0] === '';
+    const rootNote = rootIncluded ? ' including root call' : '';
     return {
       pass: false,
       message: () =>
-        `Expected ${segments.length} argument array(s) (one per segment), but got ${argsPerSegment.length}`,
+        `Expected ${segments.length} argument array(s) (one per segment${rootNote}), but got ${argsPerSegment.length}`,
     };
   }
 
@@ -369,9 +390,9 @@ export function toHaveBeenChainCalledWith(
     return {
       pass: false,
       message: () => {
-        const uncalled = segments.filter(
-          (_, i) => (states[i]?.mock.calls.length ?? 0) === 0,
-        );
+        const uncalled = segments
+          .filter((_, i) => (states[i]?.mock.calls.length ?? 0) === 0)
+          .map((seg) => (seg === '' ? '(root)' : seg));
         return `Expected chain to have been called with specified arguments, but ${uncalled.join(', ')} was never called`;
       },
     };
@@ -438,22 +459,25 @@ export function toHaveBeenNthChainCalledWith(
   }
 
   if (argsPerSegment.length !== segments.length) {
+    const rootIncluded = segments[0] === '';
+    const rootNote = rootIncluded ? ' including root call' : '';
     return {
       pass: false,
       message: () =>
-        `Expected ${segments.length} argument array(s) (one per segment), but got ${argsPerSegment.length}`,
+        `Expected ${segments.length} argument array(s) (one per segment${rootNote}), but got ${argsPerSegment.length}`,
     };
   }
 
   const mismatches: string[] = [];
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i]!;
+    const segmentName = segment === '' ? '(root)' : segment;
     const expectedArgs = argsPerSegment[i];
     const state = getPathState(received, segment);
 
     if (state === undefined || state.mock.calls.length < n) {
       mismatches.push(
-        `${segment}: expected at least ${n} call(s), but got ${state?.mock.calls.length ?? 0}`,
+        `${segmentName}: expected at least ${n} call(s), but got ${state?.mock.calls.length ?? 0}`,
       );
       continue;
     }
@@ -461,7 +485,7 @@ export function toHaveBeenNthChainCalledWith(
     const nthCall = state.mock.calls[n - 1]!;
     if (!this.equals(nthCall, expectedArgs)) {
       mismatches.push(
-        `${segment}: expected call ${n} with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(nthCall)}`,
+        `${segmentName}: expected call ${n} with ${JSON.stringify(expectedArgs)}, got ${JSON.stringify(nthCall)}`,
       );
     }
   }

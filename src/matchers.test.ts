@@ -51,11 +51,15 @@ describe('chain matchers', () => {
       }).toThrow();
     });
 
-    it('fails on root mock', () => {
+    it('passes on root mock when root was called', () => {
+      chain();
+      expect(chain).toHaveBeenChainCalled();
+    });
+
+    it('fails on root mock when root was not called', () => {
       expect(() => {
-        chain();
         expect(chain).toHaveBeenChainCalled();
-      }).toThrow();
+      }).toThrow('Cannot check chain calls on root mock');
     });
   });
 
@@ -98,11 +102,16 @@ describe('chain matchers', () => {
       }).toThrow();
     });
 
-    it('fails on root mock', () => {
+    it('passes on root mock when root was called correct number of times', () => {
+      chain();
+      expect(chain).toHaveBeenChainCalledTimes(1);
+      expect(chain).not.toHaveBeenChainCalledTimes(2);
+    });
+
+    it('fails on root mock when root was not called', () => {
       expect(() => {
-        chain();
         expect(chain).toHaveBeenChainCalledTimes(1);
-      }).toThrow();
+      }).toThrow('Cannot check chain calls on root mock');
     });
   });
 
@@ -295,6 +304,27 @@ describe('chain matchers', () => {
         [{ active: true }],
       );
     });
+
+    it('includes root call when root was called as function', () => {
+      // Simulate cheerio-style API where root is callable
+      chain('.product').find('.price').text();
+
+      expect(chain.find.text).toHaveBeenChainCalledWith(
+        ['.product'],
+        ['.price'],
+        [],
+      );
+    });
+
+    it('does not include root when root was not called', () => {
+      chain.select('id').from('users').where('active');
+
+      expect(chain.select.from.where).toHaveBeenChainCalledWith(
+        ['id'],
+        ['users'],
+        ['active'],
+      );
+    });
   });
 
   describe('toHaveBeenNthChainCalledWith', () => {
@@ -466,10 +496,10 @@ describe('chain matchers', () => {
       chain('arg1');
       chain('arg2');
 
-      // Root mock has no segments, so chain matchers should fail
+      // Root was called twice, so exactlyOnce should fail
       expect(() => {
         expect(chain).toHaveBeenChainCalledExactlyOnce();
-      }).toThrow('Cannot check chain calls on root mock');
+      }).toThrow('(root): expected 1, got 2');
     });
   });
 });
