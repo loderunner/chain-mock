@@ -375,6 +375,42 @@ expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
 );
 ```
 
+### Callable Root vs. Property Access
+
+The matchers automatically detect whether the root mock was called as a
+function. This is useful for APIs like Cheerio where the root is callable
+(`$('.selector')`).
+
+**When root is called as a function:** The root call is included as the first
+segment in the assertion. Provide an argument array for it:
+
+```typescript
+// Cheerio-style: root is called as a function
+chain('.product').find('.price').text();
+
+// Root call included - 3 argument arrays for 3 segments
+expect(chain.find.text).toHaveBeenChainCalledWith(
+  ['.product'], // root call
+  ['.price'], // .find()
+  [], // .text()
+);
+```
+
+**When root is accessed as a property:** The root is not included in the
+assertion. Provide argument arrays only for the accessed segments:
+
+```typescript
+// Drizzle-style: root accessed as property
+chain.select('id').from('users').where('active');
+
+// No root call - 3 argument arrays for 3 segments
+expect(chain.select.from.where).toHaveBeenChainCalledWith(
+  ['id'], // .select()
+  ['users'], // .from()
+  ['active'], // .where()
+);
+```
+
 ## Examples
 
 ### Drizzle ORM
