@@ -425,7 +425,10 @@ it('finds user by id', async () => {
 it('returns 404 when user not found', async () => {
   const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
 
-  await handleGetUser({ params: { id: '999' } }, res);
+  await handleGetUser(
+    { params: { id: '999' } } as unknown as Request,
+    res as unknown as Response,
+  );
 
   expect(res.status).toHaveBeenCalledWith(404);
   expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
@@ -435,14 +438,15 @@ it('returns 404 when user not found', async () => {
 
 ```typescript
 // With chain-mock ✨
-import { chainMock } from 'chain-mock';
-
 it('returns 404 when user not found', async () => {
-  const res = chainMock();
+  const mockRes = chainMock<Response>();
 
-  await handleGetUser({ params: { id: '999' } }, res);
+  await handleGetUser(
+    { params: { id: '999' } } as unknown as Request,
+    mockRes as unknown as Response,
+  );
 
-  expect(res.status.json).toHaveBeenChainCalledWith(
+  expect(mockRes.status.json).toHaveBeenChainCalledWith(
     [404],
     [{ error: 'User not found' }],
   );
@@ -453,10 +457,6 @@ it('returns 404 when user not found', async () => {
 
 ```typescript
 // Without chain-mock 😱
-const mockExec = vi.fn().mockResolvedValue([
-  [null, 'OK'],
-  [null, 'OK'],
-]);
 const mockExpire = vi.fn(() => ({ exec: mockExec }));
 const mockHset = vi.fn(() => ({ expire: mockExpire }));
 
@@ -471,62 +471,17 @@ it('caches session', async () => {
 
 ```typescript
 // With chain-mock ✨
-import { chainMock, chainMocked } from 'chain-mock';
-
 vi.mock('./redis', () => ({ redis: chainMock() }));
+
 const mockRedis = chainMocked(redis);
 
 it('caches session', async () => {
-  mockRedis.pipeline.mockResolvedValue([
-    [null, 'OK'],
-    [null, 'OK'],
-  ]);
-
-  await cacheSession({ userId: '42', token: 'abc' });
-
-  expect(mockRedis.pipeline.expire.exec).toHaveBeenChainCalledWith(
+  await cacheSession({ id: '123', data: { name: 'Dan' } });
+  expect(mockRedis.pipeline.set.expire.exec).toHaveBeenChainCalledWith(
     [],
-    ['session:42', 'token', 'abc'],
-    ['session:42', 3600],
+    ['123', JSON.stringify({ name: 'Dan' })],
+    ['123', 3600],
     [],
-  );
-});
-```
-
-### SuperTest
-
-```typescript
-// Without chain-mock 😱
-const mockSend = vi.fn().mockResolvedValue({ body: { id: 1 } });
-const mockSet = vi.fn(() => ({ send: mockSend }));
-const mockPost = vi.fn(() => ({ set: mockSet }));
-vi.mock('superagent', () => ({ default: { post: mockPost } }));
-
-it('posts user with auth header', async () => {
-  await createUser({ name: 'Dan' });
-  expect(mockPost).toHaveBeenCalledWith('/api/users');
-  expect(mockSet).toHaveBeenCalledWith('Authorization', 'Bearer token');
-  expect(mockSend).toHaveBeenCalledWith({ name: 'Dan' });
-});
-```
-
-```typescript
-// With chain-mock ✨
-import { chainMock, chainMocked } from 'chain-mock';
-
-vi.mock('superagent', () => ({ default: chainMock() }));
-const mockRequest = chainMocked(request);
-
-it('posts user with auth header', async () => {
-  mockRequest.mockResolvedValue({ body: { id: 1, name: 'Dan' } });
-
-  const result = await createUser({ name: 'Dan' });
-
-  expect(result).toEqual({ id: 1, name: 'Dan' });
-  expect(mockRequest.post.set.send).toHaveBeenChainCalledWith(
-    ['/api/users'],
-    ['Authorization', 'Bearer token'],
-    [{ name: 'Dan' }],
   );
 });
 ```
@@ -548,16 +503,15 @@ vi.mock('d3', () => ({ select: () => mockSelection }));
 
 ```typescript
 // With chain-mock ✨
-import { chainMock, chainMocked } from 'chain-mock';
-
 vi.mock('d3', () => ({ select: chainMock() }));
-const mockSelection = chainMocked(d3.select);
+
+const mockSelect = chainMocked(d3.select);
 
 it('renders bars with correct dimensions', () => {
   renderBarChart('#chart', [10, 20, 30]);
 
   expect(
-    mockSelection.selectAll.data.enter.append.attr.attr,
+    mockSelect.selectAll.data.enter.append.attr.attr,
   ).toHaveBeenChainCalledWith(
     ['.bar'],
     [[10, 20, 30]],
@@ -577,6 +531,7 @@ const mockText = vi.fn(() => '$29.99');
 const mockFirst = vi.fn(() => ({ text: mockText }));
 const mockFind = vi.fn(() => ({ first: mockFirst }));
 const mock$ = vi.fn(() => ({ find: mockFind }));
+
 vi.mock('cheerio', () => ({ load: () => mock$ }));
 
 it('extracts price', async () => {
