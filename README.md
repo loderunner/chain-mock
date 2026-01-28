@@ -1,7 +1,7 @@
 # chain-mock
 
-Mock fluent/chainable APIs (like Drizzle ORM, Knex, Kysely, etc.) with full call
-tracking and cross-framework matcher support.
+Mock fluent/chainable APIs (Drizzle, Express, D3, Cheerio, ioredis, SuperAgent,
+and more) with full call tracking and cross-framework matcher support.
 
 - [Installation](#installation)
 - [Framework Setup](#framework-setup)
@@ -368,47 +368,227 @@ expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
 ### Drizzle ORM
 
 ```typescript
-import { chainMock, chainMocked, matchers } from 'chain-mock';
-import { db } from './db';
-import { users } from './schema';
-import { eq } from 'drizzle-orm';
-
+// Without chain-mock 😱
 vi.mock('./db', () => ({
-  db: chainMock(),
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue([{ id: 42, name: 'Dan' }]),
+      })),
+    })),
+  },
 }));
-expect.extend(matchers);
 
-describe('UserService', () => {
-  const mockDb = chainMocked(db);
+it('finds user by id', async () => {
+  const result = await findUserById(42);
+  expect(result).toEqual({ id: 42, name: 'Dan' });
+  // No way to easily assert on the chain calls
+});
+```
 
-  beforeEach(() => {
-    mockDb.mockReset();
-  });
+```typescript
+// With chain-mock ✨
+import { chainMock, chainMocked } from 'chain-mock';
 
-  it('finds user by id', async () => {
-    mockDb.mockResolvedValue([{ id: 42, name: 'Dan' }]);
+vi.mock('./db', () => ({ db: chainMock() }));
+const mockDb = chainMocked(db);
 
-    const result = await userService.findById(42);
+it('finds user by id', async () => {
+  mockDb.mockResolvedValue([{ id: 42, name: 'Dan' }]);
 
-    expect(result).toEqual({ id: 42, name: 'Dan' });
-    expect(mockDb.select.from.where).toHaveBeenChainCalledWith(
-      [{ id: users.id, name: users.name }],
-      [users],
-      [eq(users.id, 42)],
-    );
-  });
+  const result = await findUserById(42);
 
-  it('inserts new user', async () => {
-    mockDb.mockResolvedValue([{ id: 1, name: 'New User' }]);
+  expect(result).toEqual({ id: 42, name: 'Dan' });
+  expect(mockDb.select.from.where).toHaveBeenChainCalledWith(
+    [],
+    [users],
+    [eq(users.id, 42)],
+  );
+});
+```
 
-    await userService.create({ name: 'New User' });
+### Express Response
 
-    expect(mockDb.insert.values.returning).toHaveBeenChainCalledWith(
-      [users],
-      [{ name: 'New User' }],
-      [],
-    );
-  });
+```typescript
+// Without chain-mock 😱
+it('returns 404 when user not found', async () => {
+  const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+
+  await handleGetUser({ params: { id: '999' } }, res);
+
+  expect(res.status).toHaveBeenCalledWith(404);
+  expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
+  // Assertions are separate - can't verify the chain order
+});
+```
+
+```typescript
+// With chain-mock ✨
+import { chainMock } from 'chain-mock';
+
+it('returns 404 when user not found', async () => {
+  const res = chainMock();
+
+  await handleGetUser({ params: { id: '999' } }, res);
+
+  expect(res.status.json).toHaveBeenChainCalledWith(
+    [404],
+    [{ error: 'User not found' }],
+  );
+});
+```
+
+### ioredis Pipeline
+
+```typescript
+// Without chain-mock 😱
+const mockExec = vi.fn().mockResolvedValue([
+  [null, 'OK'],
+  [null, 'OK'],
+]);
+const mockExpire = vi.fn(() => ({ exec: mockExec }));
+const mockHset = vi.fn(() => ({ expire: mockExpire }));
+
+vi.mock('./redis', () => ({ redis: { pipeline: () => ({ hset: mockHset }) } }));
+
+it('caches session', async () => {
+  await cacheSession({ userId: '42', token: 'abc' });
+  expect(mockHset).toHaveBeenCalledWith('session:42', 'token', 'abc');
+  expect(mockExpire).toHaveBeenCalledWith('session:42', 3600);
+});
+```
+
+```typescript
+// With chain-mock ✨
+import { chainMock, chainMocked } from 'chain-mock';
+
+vi.mock('./redis', () => ({ redis: chainMock() }));
+const mockRedis = chainMocked(redis);
+
+it('caches session', async () => {
+  mockRedis.pipeline.mockResolvedValue([
+    [null, 'OK'],
+    [null, 'OK'],
+  ]);
+
+  await cacheSession({ userId: '42', token: 'abc' });
+
+  expect(mockRedis.pipeline.expire.exec).toHaveBeenChainCalledWith(
+    [],
+    ['session:42', 'token', 'abc'],
+    ['session:42', 3600],
+    [],
+  );
+});
+```
+
+### SuperAgent
+
+```typescript
+// Without chain-mock 😱
+const mockSend = vi.fn().mockResolvedValue({ body: { id: 1 } });
+const mockSet = vi.fn(() => ({ send: mockSend }));
+const mockPost = vi.fn(() => ({ set: mockSet }));
+vi.mock('superagent', () => ({ default: { post: mockPost } }));
+
+it('posts user with auth header', async () => {
+  await createUser({ name: 'Dan' });
+  expect(mockPost).toHaveBeenCalledWith('/api/users');
+  expect(mockSet).toHaveBeenCalledWith('Authorization', 'Bearer token');
+  expect(mockSend).toHaveBeenCalledWith({ name: 'Dan' });
+});
+```
+
+```typescript
+// With chain-mock ✨
+import { chainMock, chainMocked } from 'chain-mock';
+
+vi.mock('superagent', () => ({ default: chainMock() }));
+const mockRequest = chainMocked(request);
+
+it('posts user with auth header', async () => {
+  mockRequest.mockResolvedValue({ body: { id: 1, name: 'Dan' } });
+
+  const result = await createUser({ name: 'Dan' });
+
+  expect(result).toEqual({ id: 1, name: 'Dan' });
+  expect(mockRequest.post.set.send).toHaveBeenChainCalledWith(
+    ['/api/users'],
+    ['Authorization', 'Bearer token'],
+    [{ name: 'Dan' }],
+  );
+});
+```
+
+### D3.js
+
+```typescript
+// Without chain-mock 😱
+const mockAttr2 = vi.fn(() => mockSelection);
+const mockAttr = vi.fn(() => ({ attr: mockAttr2 }));
+const mockAppend = vi.fn(() => ({ attr: mockAttr }));
+const mockEnter = vi.fn(() => ({ append: mockAppend }));
+const mockData = vi.fn(() => ({ enter: mockEnter }));
+const mockSelectAll = vi.fn(() => ({ data: mockData }));
+const mockSelection = { selectAll: mockSelectAll };
+vi.mock('d3', () => ({ select: () => mockSelection }));
+// ...and we haven't even written the assertions yet
+```
+
+```typescript
+// With chain-mock ✨
+import { chainMock, chainMocked } from 'chain-mock';
+
+vi.mock('d3', () => ({ select: chainMock() }));
+const mockSelection = chainMocked(d3.select);
+
+it('renders bars with correct dimensions', () => {
+  renderBarChart('#chart', [10, 20, 30]);
+
+  expect(
+    mockSelection.selectAll.data.enter.append.attr.attr,
+  ).toHaveBeenChainCalledWith(
+    ['.bar'],
+    [[10, 20, 30]],
+    [],
+    ['rect'],
+    ['class', 'bar'],
+    ['height', expect.any(Function)],
+  );
+});
+```
+
+### Cheerio
+
+```typescript
+// Without chain-mock 😱
+const mockText = vi.fn(() => '$29.99');
+const mockFirst = vi.fn(() => ({ text: mockText }));
+const mockFind = vi.fn(() => ({ first: mockFirst }));
+const mock$ = vi.fn(() => ({ find: mockFind }));
+vi.mock('cheerio', () => ({ load: () => mock$ }));
+
+it('extracts price', async () => {
+  const price = await scrapePrice('<html>...</html>');
+  expect(mock$).toHaveBeenCalledWith('.product');
+  expect(mockFind).toHaveBeenCalledWith('.price');
+});
+```
+
+```typescript
+// With chain-mock ✨
+import { chainMock, chainMocked } from 'chain-mock';
+
+const mock$ = chainMock<CheerioAPI>();
+vi.mock('cheerio', () => ({ load: () => mock$ }));
+
+it('extracts price', async () => {
+  mock$.mockReturnValue('$29.99');
+
+  const price = await scrapePrice('<html>...</html>');
+
+  expect(price).toBe('$29.99');
+  expect(mock$.find).toHaveBeenChainCalledWith(['.product'], ['.price']);
 });
 ```
 
