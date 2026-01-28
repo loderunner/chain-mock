@@ -8,7 +8,7 @@ and more) with full call tracking and cross-framework matcher support.
 - [API Reference](#api-reference)
 - [Custom Matchers](#custom-matchers)
 - [Examples](#examples)
-- [Manual Type Augmentation](#manual-type-augmentation)
+- [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ### The Problem
@@ -162,6 +162,44 @@ Or use a triple-slash reference in a `.d.ts` file:
 > // Use explicit type parameter to avoid type error
 > expect(result).toEqual<string>('abc123');
 > ```
+
+### Manual Type Augmentation
+
+If the built-in type augmentation doesn't work for your setup, you can manually
+augment your framework's types:
+
+```typescript
+import type { ChainMatchers } from 'chain-mock';
+
+// For Vitest
+declare module 'vitest' {
+  interface Assertion<T = any> extends ChainMatchers<T> {}
+  interface AsymmetricMatchersContaining extends ChainMatchers {}
+}
+
+// For Jest with @jest/globals
+declare module 'expect' {
+  interface Matchers<R, T> extends ChainMatchers<R> {}
+}
+
+// For Jest with global expect
+declare global {
+  namespace jest {
+    interface Matchers<R, T> extends ChainMatchers<R> {}
+  }
+}
+
+// For Bun
+declare module 'bun:test' {
+  interface Matchers<T> extends ChainMatchers<T> {}
+  interface AsymmetricMatchers extends ChainMatchers {}
+}
+
+// For other expect-based framework
+declare module 'other-expect' {
+  interface Matchers<R> extends ChainMatchers<R> {}
+}
+```
 
 ## API Reference
 
@@ -613,43 +651,98 @@ it('extracts price', async () => {
 });
 ```
 
-## Manual Type Augmentation
+## Troubleshooting
 
-If the built-in type augmentation doesn't work for your setup, you can manually
-augment your framework's types:
+### "Argument of type 'X' is not assignable to parameter of type 'Y'" (Bun)
+
+Bun's `toEqual`, `toBe`, and `toStrictEqual` matchers use TypeScript's `NoInfer`
+utility to constrain the expected value to match the received type. When a
+ChainMock is called, the return type is `ChainMock<T>`, not the underlying value
+type.
+
+**Solution:** Add an explicit type parameter to the matcher:
 
 ```typescript
-import type { ChainMatchers } from 'chain-mock';
+const mock = chainMock();
+mock.mockReturnValue('hello');
+const result = mock();
 
-// For Vitest
-declare module 'vitest' {
-  interface Assertion<T = any> extends ChainMatchers<T> {}
-  interface AsymmetricMatchersContaining extends ChainMatchers {}
-}
+// ❌ Error: Argument of type 'string' is not assignable...
+expect(result).toEqual('hello');
 
-// For Jest with @jest/globals
-declare module 'expect' {
-  interface Matchers<R, T> extends ChainMatchers<R> {}
-}
-
-// For Jest with global expect
-declare global {
-  namespace jest {
-    interface Matchers<R, T> extends ChainMatchers<R> {}
-  }
-}
-
-// For Bun
-declare module 'bun:test' {
-  interface Matchers<T> extends ChainMatchers<T> {}
-  interface AsymmetricMatchers extends ChainMatchers {}
-}
-
-// For other expect-based framework
-declare module 'other-expect' {
-  interface Matchers<R> extends ChainMatchers<R> {}
-}
+// ✅ Fix: add explicit type parameter
+expect(result).toEqual<string>('hello');
 ```
+
+See [Bun Matchers.toEqual](https://bun.sh/docs/test/writing#toequal) for more
+details.
+
+### Async function returns `undefined` instead of ChainMock
+
+ChainMock implements `PromiseLike`, so when returned from an async function,
+JavaScript automatically awaits it and resolves to its mocked value (or
+`undefined` if no value was configured).
+
+**Solution:** Wrap the ChainMock in a tuple or object to prevent automatic
+resolution.
+
+```typescript
+// Test helper that loads fixtures and creates a configured mock
+async function setupDbMock() {
+  const fixtures = await loadFixtures('./users.json');
+
+  const mock = chainMock();
+  mock.select.from.where.mockResolvedValue(fixtures);
+
+  return mock; // ❌ Awaited and resolved to undefined!
+}
+
+it('queries users', async () => {
+  const db = await setupDbMock();
+  db.select('*').from('users'); // ❌ Error: db is undefined
+});
+
+// Fix: wrap in tuple
+async function setupDbMock() {
+  const fixtures = await loadFixtures('./users.json');
+
+  const mock = chainMock();
+  mock.select.from.where.mockResolvedValue(fixtures);
+
+  return [mock] as const; // ✅ Tuple prevents resolution
+}
+
+it('queries users', async () => {
+  const [db] = await setupDbMock();
+  db.select('*').from('users'); // ✅ Works!
+});
+```
+
+### "Cannot access '\_\_vi_import_0\_\_' before initialization" (Vitest)
+
+`vi.mock()` is hoisted to the top of the file, before any imports are evaluated.
+If you try to use `chainMock` from a static import inside `vi.mock()` or
+`vi.hoisted()`, the import hasn't been initialized yet.
+
+**Solution:** Use `vi.hoisted()` with a dynamic `import()` and wrap the mock in
+a tuple:
+
+```typescript
+// ❌ Wrong: static import is not available in hoisted code
+import { chainMock } from 'chain-mock';
+const mock = vi.hoisted(() => chainMock()); // Error!
+
+// ✅ Correct: use dynamic import inside vi.hoisted
+const [mock] = await vi.hoisted(async () => {
+  const { chainMock } = await import('chain-mock');
+  return [chainMock()];
+});
+
+vi.mock('./module', () => ({ fn: mock }));
+```
+
+See [Vitest vi.hoisted](https://vitest.dev/api/vi.html#vi-hoisted) for more
+details.
 
 ## License
 
