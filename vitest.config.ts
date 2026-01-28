@@ -6,6 +6,7 @@ export default defineConfig({
       'acceptance/vitest-project/**/*',
       'acceptance/jest-project/**/*',
       'acceptance/bun-project/**/*',
+      'examples/**/*',
     ],
     projects: [
       {

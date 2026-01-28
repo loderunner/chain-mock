@@ -17,7 +17,7 @@ export default [
       'acceptance/vitest-project/**/*',
       'acceptance/jest-project/**/*',
       'acceptance/bun-project/**/*',
-      'acceptance/examples/**/*',
+      'examples/**/*',
     ],
   },
   {

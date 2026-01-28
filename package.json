@@ -41,7 +41,8 @@
     "lint": "prettier --check . && eslint --max-warnings 0 .",
     "lint:fix": "prettier --write . && eslint --max-warnings 0 --fix .",
     "test": "vitest run",
-    "build": "rolldown -c"
+    "build": "rolldown -c",
+    "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",
