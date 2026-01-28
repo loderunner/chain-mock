@@ -379,6 +379,9 @@ expect(chain.select.from.where).toHaveBeenLastChainCalledWith(
 
 ### Drizzle ORM
 
+\[ [Full example](examples/drizzle) \] | \[
+[Drizzle ORM](https://orm.drizzle.team/) \]
+
 ```typescript
 // Without chain-mock 😱
 vi.mock('./db', () => ({
@@ -420,6 +423,8 @@ it('finds user by id', async () => {
 
 ### Express Response
 
+\[ [Full example](examples/express) \] | \[ [Express](https://expressjs.com/) \]
+
 ```typescript
 // Without chain-mock 😱
 it('returns 404 when user not found', async () => {
@@ -455,6 +460,9 @@ it('returns 404 when user not found', async () => {
 
 ### ioredis Pipeline
 
+\[ [Full example](examples/ioredis) \] | \[
+[ioredis](https://github.com/redis/ioredis) \]
+
 ```typescript
 // Without chain-mock 😱
 const mockExpire = vi.fn(() => ({ exec: mockExec }));
@@ -487,6 +495,8 @@ it('caches session', async () => {
 ```
 
 ### D3.js
+
+\[ [Full example](examples/d3) \] | \[ [D3.js](https://d3js.org/) \]
 
 ```typescript
 // Without chain-mock 😱
@@ -525,6 +535,9 @@ it('renders bars with correct dimensions', () => {
 ```
 
 ### Cheerio
+
+\[ [Full example](examples/cheerio) \] | \[ [Cheerio](https://cheerio.js.org/)
+\]
 
 ```typescript
 // Without chain-mock 😱
