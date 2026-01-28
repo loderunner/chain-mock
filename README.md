@@ -151,6 +151,18 @@ Or use a triple-slash reference in a `.d.ts` file:
 /// <reference types="chain-mock/bun" />
 ```
 
+> [!WARNING] Bun's `toEqual`, `toBe`, and `toStrictEqual` matchers constrain the
+> expected value to match the received type. When testing `mockReturnValue`
+> results, use an explicit type parameter:
+>
+> ```typescript
+> chain.mockReturnValue('abc123');
+> const result = chain();
+>
+> // Use explicit type parameter to avoid type error
+> expect(result).toEqual<string>('abc123');
+> ```
+
 ## API Reference
 
 ### `chainMock<T>()`
@@ -388,13 +400,12 @@ it('finds user by id', async () => {
 
 ```typescript
 // With chain-mock ✨
-import { chainMock, chainMocked } from 'chain-mock';
-
 vi.mock('./db', () => ({ db: chainMock() }));
+
 const mockDb = chainMocked(db);
 
 it('finds user by id', async () => {
-  mockDb.mockResolvedValue([{ id: 42, name: 'Dan' }]);
+  mockDb.select.from.where.mockResolvedValue([{ id: 42, name: 'Dan' }]);
 
   const result = await findUserById(42);
 

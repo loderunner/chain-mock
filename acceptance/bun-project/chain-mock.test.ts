@@ -3,6 +3,8 @@ import { expect, test, beforeEach, describe } from 'bun:test';
 
 expect.extend(matchers);
 
+type User = { id: number; name: string };
+
 describe('chain-mock with bun', () => {
   let chain: ChainMock;
 
@@ -74,12 +76,12 @@ describe('chain-mock with bun', () => {
   test('validates mockReturnValue', () => {
     chain.select.from.where.mockReturnValue({ id: 42, name: 'Dan' });
     const result = chain.select('id').from('users').where('active');
-    expect(result).toEqual({ id: 42, name: 'Dan' });
+    expect(result).toEqual<User>({ id: 42, name: 'Dan' });
   });
 
   test('validates mockResolvedValue', async () => {
     chain.select.from.where.mockResolvedValue([{ id: 42, name: 'Dan' }]);
     const result = await chain.select('id').from('users').where('active');
-    expect(result).toEqual([{ id: 42, name: 'Dan' }]);
+    expect(result).toEqual<User[]>([{ id: 42, name: 'Dan' }]);
   });
 });
