@@ -482,7 +482,7 @@ it('caches session', async () => {
 });
 ```
 
-### SuperAgent
+### SuperTest
 
 ```typescript
 // Without chain-mock 😱

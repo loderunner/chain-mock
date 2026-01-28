@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+chain-mock-*.tgz
 
 # Editor directories and files
 .idea

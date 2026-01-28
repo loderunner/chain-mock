@@ -29,7 +29,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'acceptance',
-          include: ['acceptance/**/*.test.ts'],
+          include: ['acceptance/*.test.ts'],
           testTimeout: 120000,
         },
       },
