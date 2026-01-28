@@ -153,9 +153,11 @@ Or use a triple-slash reference in a `.d.ts` file:
 /// <reference types="chain-mock/bun" />
 ```
 
-> [!WARNING] Bun's `toEqual`, `toBe`, and `toStrictEqual` matchers constrain the
-> expected value to match the received type. When testing `mockReturnValue`
-> results, use an explicit type parameter:
+> [!WARNING]
+>
+> Bun's `toEqual`, `toBe`, and `toStrictEqual` matchers constrain the expected
+> value to match the received type. When testing `mockReturnValue` results, use
+> an explicit type parameter:
 >
 > ```typescript
 > chain.mockReturnValue('abc123');
