@@ -34,8 +34,8 @@ importers:
         specifier: 9.39.2
         version: 9.39.2
       eslint-config-loderunner:
-        specifier: 3.0.0
-        version: 3.0.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.6(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.9.0)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.4.1(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.54.0(eslint@9.39.2)(typescript@5.9.3))
+        specifier: 4.1.0
+        version: 4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.6(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.9.0)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.4.1(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.54.0(eslint@9.39.2)(typescript@5.9.3))
       eslint-config-prettier:
         specifier: 10.1.8
         version: 10.1.8(eslint@9.39.2)
@@ -1715,23 +1715,26 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-config-loderunner@3.0.0:
-    resolution: {integrity: sha512-AE0l3M8QNNY9javTowgesb1oFBcOyrxGrfAd4BQiOLE4Koqnt7g+7MEf5+Hwsv6TkuB6L0ZtU2HZKDSefdC1LA==}
+  eslint-config-loderunner@4.1.0:
+    resolution: {integrity: sha512-JOUXHzvRI6zdJN/ThwSVtDldbLOQvDqpN50BcJ8eHzjsZtJMipde3ZIzGcHhssgvni6IiW0VBcY5gy+aasC/Ug==}
     peerDependencies:
       '@eslint/js': ^9.0.0
       '@vitest/eslint-plugin': ^1.0.0
       eslint: ^9.0.0
       eslint-config-prettier: ^10.0.0
+      eslint-import-resolver-typescript: ^4.0.0
       eslint-plugin-import: ^2.31.0
-      eslint-plugin-jsdoc: ^50.0.0
+      eslint-plugin-jsdoc: ^62.0.0
       eslint-plugin-react: ^7.37.0
-      eslint-plugin-react-hooks: ^5.0.0
+      eslint-plugin-react-hooks: ^7.0.0
       eslint-plugin-vue: ^10.6.0
       typescript-eslint: ^8.0.0
     peerDependenciesMeta:
       '@vitest/eslint-plugin':
         optional: true
       eslint-config-prettier:
+        optional: true
+      eslint-import-resolver-typescript:
         optional: true
       eslint-plugin-import:
         optional: true
@@ -5096,7 +5099,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-loderunner@3.0.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.6(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.9.0)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.4.1(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.54.0(eslint@9.39.2)(typescript@5.9.3)):
+  eslint-config-loderunner@4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.6(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.9.0)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.4.1(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.54.0(eslint@9.39.2)(typescript@5.9.3)):
     dependencies:
       '@eslint/js': 9.39.2
       eslint: 9.39.2
@@ -5104,6 +5107,7 @@ snapshots:
     optionalDependencies:
       '@vitest/eslint-plugin': 1.6.6(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.9.0)(yaml@2.8.2))
       eslint-config-prettier: 10.1.8(eslint@9.39.2)
+      eslint-import-resolver-typescript: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2)
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2)
       eslint-plugin-jsdoc: 62.4.1(eslint@9.39.2)
 
