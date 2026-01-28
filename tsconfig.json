@@ -21,7 +21,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*", "acceptance/frameworks.test.ts"],
+  "include": ["src/**/*", "acceptance/*.ts"],
   "exclude": [
     "node_modules",
     "dist",

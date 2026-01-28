@@ -16,6 +16,7 @@ it('renders bars with correct dimensions', () => {
   expect(
     mockSelect.selectAll.data.enter.append.attr.attr,
   ).toHaveBeenChainCalledWith(
+    ['#chart'],
     ['.bar'],
     [[10, 20, 30]],
     [],

@@ -1,46 +1,18 @@
-import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { GenericContainer } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-describe('framework acceptance tests', () => {
+import { setup, teardown } from './setup-teardown';
+
+describe.concurrent('framework acceptance tests', () => {
   let tarballPath: string;
 
   beforeAll(() => {
-    // When running tests, process.cwd() is the project root
-    const rootDir = process.cwd();
-
-    // Build the library first
-    execSync('pnpm build', { cwd: rootDir });
-
-    // Pack the library
-    const packOutput = execSync('pnpm pack', {
-      cwd: rootDir,
-      encoding: 'utf-8',
-    });
-    const tarballName = packOutput.trim().split('\n').pop()?.split(' ').pop();
-    if (tarballName === undefined || tarballName === '') {
-      throw new Error('Failed to get tarball name from pnpm pack');
-    }
-    tarballPath = resolve(rootDir, tarballName);
-
-    if (!existsSync(tarballPath)) {
-      throw new Error(`Tarball not found at ${tarballPath}`);
-    }
+    tarballPath = setup();
   });
 
-  afterAll(() => {
-    // Clean up tarball
-    if (existsSync(tarballPath)) {
-      try {
-        execSync(`rm -f "${tarballPath}"`);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-  });
+  afterAll(() => teardown(tarballPath));
 
   it.concurrent('vitest framework works correctly', async () => {
     const projectDir = resolve(process.cwd(), 'acceptance', 'vitest-project');

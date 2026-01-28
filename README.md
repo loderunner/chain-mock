@@ -513,6 +513,7 @@ it('renders bars with correct dimensions', () => {
   expect(
     mockSelect.selectAll.data.enter.append.attr.attr,
   ).toHaveBeenChainCalledWith(
+    ['#chart'],
     ['.bar'],
     [[10, 20, 30]],
     [],
@@ -543,18 +544,23 @@ it('extracts price', async () => {
 
 ```typescript
 // With chain-mock ✨
-import { chainMock, chainMocked } from 'chain-mock';
-
-const mock$ = chainMock<CheerioAPI>();
+const [mock$] = await vi.hoisted(async () => {
+  const { chainMock } = await import('chain-mock');
+  return [chainMock<cheerio.CheerioAPI>()];
+});
 vi.mock('cheerio', () => ({ load: () => mock$ }));
 
 it('extracts price', async () => {
-  mock$.mockReturnValue('$29.99');
+  mock$.find.text.mockReturnValue('$29.99' as any);
 
-  const price = await scrapePrice('<html>...</html>');
+  const price = await scrapePrice(`<html>...</html>`);
 
   expect(price).toBe('$29.99');
-  expect(mock$.find).toHaveBeenChainCalledWith(['.product'], ['.price']);
+  expect(mock$.find.text).toHaveBeenChainCalledWith(
+    ['.product'],
+    ['.price'],
+    [],
+  );
 });
 ```
 
