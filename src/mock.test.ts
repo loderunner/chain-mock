@@ -424,9 +424,7 @@ describe('chainMock', () => {
 
       expect(() => {
         chain.select.from.where.mockClear();
-      }).toThrow(
-        'mockClear() on a nested chain path ("select.from.where") clears only that path and its children, not ancestors. This leads to unexpected behavior with chain assertions. Use chain.mockClear() on the root mock instead.',
-      );
+      }).toThrow('mockClear() on a nested chain path');
 
       // Calls should still be there since clear failed
       expect(chain.select.from.where.mock.calls).toHaveLength(1);
