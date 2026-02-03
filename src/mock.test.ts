@@ -392,16 +392,16 @@ describe('chainMock', () => {
       expect(result).toBeUndefined();
     });
 
-    it('works on specific paths', () => {
+    it('throws error when called on nested path', () => {
       chain.select.from.where.mockResolvedValue([{ id: 1 }]);
       chain.select('id').from('users').where('id = 42');
 
+      expect(() => {
+        chain.select.from.where.mockReset();
+      }).toThrow('mockReset() on a nested chain path');
+
+      // Calls should still be there since reset failed
       expect(chain.select.from.where.mock.calls).toHaveLength(1);
-
-      chain.select.from.where.mockReset();
-
-      expect(chain.select.from.where.mock.calls).toHaveLength(0);
-      expect(chain.select.from.mock.calls).toHaveLength(1); // Other paths unchanged
     });
   });
 
@@ -418,14 +418,18 @@ describe('chainMock', () => {
       expect(result).toEqual([{ preserved: true }]);
     });
 
-    it('works on specific paths', () => {
+    it('throws error when called on nested path', () => {
       chain.select.from.where.mockResolvedValue([{ id: 1 }]);
       chain.select('id').from('users').where('id = 42');
 
-      chain.select.from.where.mockClear();
+      expect(() => {
+        chain.select.from.where.mockClear();
+      }).toThrow(
+        'mockClear() on a nested chain path ("select.from.where") clears only that path and its children, not ancestors. This leads to unexpected behavior with chain assertions. Use chain.mockClear() on the root mock instead.',
+      );
 
-      expect(chain.select.from.where.mock.calls).toHaveLength(0);
-      expect(chain.select.from.mock.calls).toHaveLength(1); // Other paths unchanged
+      // Calls should still be there since clear failed
+      expect(chain.select.from.where.mock.calls).toHaveLength(1);
     });
   });
 
