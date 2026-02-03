@@ -750,11 +750,11 @@ details.
 
 ### "mockClear() on a nested chain path" error
 
-Calling `mockClear()` on a nested path (e.g., `chain.select.from.where.mockClear()`)
-throws an error. This is by design: nested `mockClear()` would only clear the
-specified path and its children, not ancestor paths like `select` or `select.from`.
-This leads to unexpected behavior when using chain matchers, which check all
-segments in the path.
+Calling `mockClear()` on a nested path (e.g.,
+`chain.select.from.where.mockClear()`) throws an error. This is by design:
+nested `mockClear()` would only clear the specified path and its children, not
+ancestor paths like `select` or `select.from`. This leads to unexpected behavior
+when using chain matchers, which check all segments in the path.
 
 **Solution:** Always call `mockClear()` on the root mock:
 
