@@ -333,25 +333,21 @@ export function chainMock<T = any>(): ChainMock<T> {
 
         if (prop === 'mockReset') {
           return () => {
-            // If resetting root, clear all paths
-            if (path.length === 0) {
-              pathStates.clear();
-              proxyCache.clear();
-            } else {
-              // Reset this specific path and all its children
-              const keysToDelete: string[] = [];
-              for (const key of pathStates.keys()) {
-                if (key === cacheKey || key.startsWith(cacheKey + '.')) {
-                  keysToDelete.push(key);
-                }
-              }
-              for (const key of keysToDelete) {
-                pathStates.delete(key);
-                proxyCache.delete(key);
-              }
+            // mockReset() on nested paths resets only that path and its children,
+            // not ancestors. This leads to unexpected behavior with chain assertions
+            // that check all segments in the path. Only allow resetting from root.
+            if (path.length > 0) {
+              const pathName = path.join('.');
+              throw new Error(
+                `mockReset() on a nested chain path ("${pathName}") resets only that path and its children, not ancestors. Use chain.mockReset() on the root mock instead.`,
+              );
             }
 
-            // Create fresh state for this path
+            // Reset all paths from root
+            pathStates.clear();
+            proxyCache.clear();
+
+            // Create fresh state for root
             const newState: PathState = {
               mock: {
                 calls: [],
@@ -375,36 +371,30 @@ export function chainMock<T = any>(): ChainMock<T> {
               mockName: 'chainMock()',
             };
             pathStates.set(cacheKey, newState);
-            // Invalidate cached proxy for this path
-            proxyCache.delete(cacheKey);
             return getOrCreateProxy(path);
           };
         }
 
         if (prop === 'mockClear') {
           return () => {
-            // If clearing root, clear all paths
-            if (path.length === 0) {
-              for (const pathState of pathStates.values()) {
-                pathState.mock.calls = [];
-                pathState.mock.results = [];
-                pathState.mock.contexts = [];
-                pathState.mock.instances = [];
-                pathState.mock.invocationCallOrder = [];
-                pathState.mock.settledResults = [];
-              }
-            } else {
-              // Clear this specific path and all its children
-              for (const [key, pathState] of pathStates.entries()) {
-                if (key === cacheKey || key.startsWith(cacheKey + '.')) {
-                  pathState.mock.calls = [];
-                  pathState.mock.results = [];
-                  pathState.mock.contexts = [];
-                  pathState.mock.instances = [];
-                  pathState.mock.invocationCallOrder = [];
-                  pathState.mock.settledResults = [];
-                }
-              }
+            // mockClear() on nested paths clears only that path and its children,
+            // not ancestors. This leads to unexpected behavior with chain assertions
+            // that check all segments in the path. Only allow clearing from root.
+            if (path.length > 0) {
+              const pathName = path.join('.');
+              throw new Error(
+                `mockClear() on a nested chain path ("${pathName}") clears only that path and its children, not ancestors. Use chain.mockClear() on the root mock instead.`,
+              );
+            }
+
+            // Clear all paths from root
+            for (const pathState of pathStates.values()) {
+              pathState.mock.calls = [];
+              pathState.mock.results = [];
+              pathState.mock.contexts = [];
+              pathState.mock.instances = [];
+              pathState.mock.invocationCallOrder = [];
+              pathState.mock.settledResults = [];
             }
             return getOrCreateProxy(path);
           };

@@ -748,6 +748,33 @@ vi.mock('./module', () => ({ fn: mock }));
 See [Vitest vi.hoisted](https://vitest.dev/api/vi.html#vi-hoisted) for more
 details.
 
+### "mockClear() on a nested chain path" error
+
+Calling `mockClear()` on a nested path (e.g.,
+`chain.select.from.where.mockClear()`) throws an error. This is by design:
+nested `mockClear()` would only clear the specified path and its children, not
+ancestor paths like `select` or `select.from`. This leads to unexpected behavior
+when using chain matchers, which check all segments in the path.
+
+**Solution:** Always call `mockClear()` on the root mock:
+
+```typescript
+const chain = chainMock();
+chain.select('id').from('users').where('active');
+
+// ❌ Error: clears only "where", not "select" or "from"
+chain.select.from.where.mockClear();
+
+// ✅ Correct: clears all paths in the chain
+chain.mockClear();
+
+// Now assertions work as expected
+chain.select('name').from('posts').where('published');
+expect(chain.select.from.where).toHaveBeenChainCalledExactlyOnce();
+```
+
+The same applies to `mockReset()` - always call it on the root mock.
+
 ## License
 
 Apache-2.0
