@@ -35,6 +35,7 @@ export default defineConfig({
         },
       },
     ],
-    slowTestThreshold: 20000,
+    // Acceptance tests are slow, so we give them a longer timeout
+    slowTestThreshold: 30000,
   },
 });
