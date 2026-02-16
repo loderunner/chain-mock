@@ -35,7 +35,7 @@ importers:
         version: 9.39.2
       eslint-config-loderunner:
         specifier: 4.1.0
-        version: 4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.7(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.10.13)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.5.4(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.55.0(eslint@9.39.2)(typescript@5.9.3))
+        version: 4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.7(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.10.13)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.5.5(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.55.0(eslint@9.39.2)(typescript@5.9.3))
       eslint-config-prettier:
         specifier: 10.1.8
         version: 10.1.8(eslint@9.39.2)
@@ -46,8 +46,8 @@ importers:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2)
       eslint-plugin-jsdoc:
-        specifier: 62.5.4
-        version: 62.5.4(eslint@9.39.2)
+        specifier: 62.5.5
+        version: 62.5.5(eslint@9.39.2)
       globals:
         specifier: 17.3.0
         version: 17.3.0
@@ -1757,8 +1757,8 @@ packages:
       '@typescript-eslint/parser':
         optional: true
 
-  eslint-plugin-jsdoc@62.5.4:
-    resolution: {integrity: sha512-U+Q5ppErmC17VFQl542eBIaXcuq975BzoIHBXyx7UQx/i4gyHXxPiBkonkuxWyFA98hGLALLUuD+NJcXqSGKxg==}
+  eslint-plugin-jsdoc@62.5.5:
+    resolution: {integrity: sha512-aRp0KVW26imgPqn17oSDnJdA3tlu+6D/xI/pqWzK5qDPQbldQ1Hsg84dYAsFyvGJhI+u/sGvzgGjMjlKQtUG/Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
@@ -4972,7 +4972,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-loderunner@4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.7(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.10.13)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.5.4(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.55.0(eslint@9.39.2)(typescript@5.9.3)):
+  eslint-config-loderunner@4.1.0(@eslint/js@9.39.2)(@vitest/eslint-plugin@1.6.7(eslint@9.39.2)(typescript@5.9.3)(vitest@4.0.18(@types/node@24.10.13)(yaml@2.8.2)))(eslint-config-prettier@10.1.8(eslint@9.39.2))(eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2))(eslint-plugin-jsdoc@62.5.5(eslint@9.39.2))(eslint@9.39.2)(typescript-eslint@8.55.0(eslint@9.39.2)(typescript@5.9.3)):
     dependencies:
       '@eslint/js': 9.39.2
       eslint: 9.39.2
@@ -4982,7 +4982,7 @@ snapshots:
       eslint-config-prettier: 10.1.8(eslint@9.39.2)
       eslint-import-resolver-typescript: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.2)
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2)
-      eslint-plugin-jsdoc: 62.5.4(eslint@9.39.2)
+      eslint-plugin-jsdoc: 62.5.5(eslint@9.39.2)
 
   eslint-config-prettier@10.1.8(eslint@9.39.2):
     dependencies:
@@ -5058,7 +5058,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-jsdoc@62.5.4(eslint@9.39.2):
+  eslint-plugin-jsdoc@62.5.5(eslint@9.39.2):
     dependencies:
       '@es-joy/jsdoccomment': 0.84.0
       '@es-joy/resolve.exports': 1.2.0
