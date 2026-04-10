@@ -77,7 +77,7 @@
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jsdoc": "62.9.0",
     "globals": "17.4.0",
-    "prettier": "3.8.1",
+    "prettier": "3.8.2",
     "rolldown": "1.0.0-rc.15",
     "rolldown-plugin-dts": "^0.23.0",
     "testcontainers": "^11.11.0",
