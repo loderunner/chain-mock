@@ -83,7 +83,7 @@
     "testcontainers": "^11.11.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.60.0",
-    "vitest": "4.1.7"
+    "vitest": "4.1.8"
   },
   "peerDependencies": {
     "@types/bun": ">=1.0.0",
