@@ -73,7 +73,7 @@
     "eslint": "9.39.2",
     "eslint-config-loderunner": "4.2.1",
     "eslint-config-prettier": "10.1.8",
-    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jsdoc": "62.9.0",
     "globals": "17.6.0",
