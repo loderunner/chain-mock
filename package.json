@@ -71,7 +71,7 @@
     "@typescript-eslint/parser": "8.61.1",
     "@vitest/eslint-plugin": "^1.6.6",
     "eslint": "9.39.2",
-    "eslint-config-loderunner": "4.2.5",
+    "eslint-config-loderunner": "5.1.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import": "2.32.0",
